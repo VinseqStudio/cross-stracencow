@@ -1,7 +1,9 @@
 ---
 import { Picture } from 'astro:assets';
 import { ArrowRight } from '@lucide/astro';
+import SectionHead from './SectionHead.astro';
 import { photo } from '../lib/photos';
+import { editions } from '../../db/data/editions';
 
 // Mozaika z różnych lat. Każde zdjęcie prowadzi do swojego roku w galerii.
 const tiles = [
@@ -11,17 +13,14 @@ const tiles = [
   { rel: '2019/2019-08.jpg', year: 2019, alt: 'Zawodniczki pomagają sobie nawzajem w błocie', cls: '' },
   { rel: '2022/2022-04.jpg', year: 2022, alt: 'Zawodniczka z numerem 76 rozbryzguje wodę w rowie', cls: '' },
 ];
+const years = [...editions].reverse();
 ---
 
 <section id="galeria" class="section-pad bg-surface" aria-labelledby="galeria-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <header class="flex flex-wrap items-end justify-between gap-6">
-      <div class="grid max-w-[700px] gap-3">
-        <h2 id="galeria-title" class="display-lg">Dziesięć lat w błocie</h2>
-        <p class="lead max-w-[48ch] text-muted">Zdjęcia z kolejnych edycji, od 2016 roku do dziś.</p>
-      </div>
+    <SectionHead id="galeria-title" title={`${editions.length} edycji w błocie`} lead="Od 2011 roku na torze w Górkowie. W kwietniu dopiszemy siedemnastą.">
       <a href="/galeria/" class="btn btn-outline">Otwórz galerię <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
-    </header>
+    </SectionHead>
 
     <div class="grid auto-rows-[1fr] grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {tiles.map((t) => (
@@ -37,5 +36,18 @@ const tiles = [
         </a>
       ))}
     </div>
+
+    <nav aria-label="Galeria według roku">
+      <ul class="grid grid-cols-4 gap-2 sm:grid-cols-8">
+        {years.map((e) => (
+          <li>
+            <a href={`/galeria/#rok-${e.year}`} class="grid min-h-14 place-items-center rounded-sm border border-line-strong bg-bg px-2 transition-colors hover:border-fg hover:bg-fg hover:text-bg">
+              <span class="font-condensed text-lg leading-none font-bold tabular-nums">{e.year}</span>
+              <span class="text-[12px] leading-4 text-muted">{e.number}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   </div>
 </section>

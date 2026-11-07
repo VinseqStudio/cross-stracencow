@@ -29,7 +29,7 @@ const jsonLd = [
       address: { '@type': 'PostalAddress', addressLocality: event.venue.city, addressRegion: 'dolnośląskie', addressCountry: 'PL' },
     },
     image: [`${site}/og.jpg`],
-    organizer: { '@type': 'Organization', name: event.organizer.name, url: event.organizer.url, email: event.organizer.email },
+    organizer: { '@type': 'Organization', name: event.organizer.name, email: event.organizer.email },
     subEvent: distances.map((d) => ({
       '@type': 'SportsEvent',
       name: `${d.name} ${d.distance}`,

@@ -1,16 +1,41 @@
 ---
+import { Send } from '@lucide/astro';
 import { faq, event } from '../data/event';
+
+const field = 'min-h-12 w-full rounded-sm border-[1.5px] border-line-strong bg-raised px-4 py-3 text-[17px] text-fg placeholder:text-muted hover:border-muted focus:border-fg aria-[invalid=true]:border-red-strong';
 ---
 
 <section id="faq" class="section-pad bg-surface" aria-labelledby="faq-title">
-  <div class="wrap grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
-    <header class="grid content-start gap-3">
-      <h2 id="faq-title" class="display-lg">Zanim przyjedziesz</h2>
-      <p class="lead max-w-[40ch] text-muted">
-        Nie ma tu odpowiedzi? Napisz na <a class="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-red" href={`mailto:${event.organizer.email}`}>{event.organizer.email}</a>.
-      </p>
-    </header>
-    <div class="faq border-t border-line-strong">
+  <div class="wrap grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
+    <div class="grid content-start gap-8 lg:sticky lg:top-28 lg:self-start">
+      <div class="grid gap-3">
+        <h2 id="faq-title" class="display-lg">Zanim przyjedziesz</h2>
+        <p class="lead max-w-[40ch] text-muted">Nie ma tu Twojego pytania? Napisz do biura zawodów.</p>
+      </div>
+
+      <form class="contact grid gap-4 rounded-sm bg-raised p-5 lg:p-6" novalidate data-to={event.organizer.email} aria-labelledby="kontakt-h">
+        <h3 id="kontakt-h" class="font-condensed text-[22px] leading-tight font-bold">Zapytaj organizatora</h3>
+        <div class="grid gap-2">
+          <label for="k-name" class="text-[15px] font-semibold">Imię</label>
+          <input id="k-name" name="name" autocomplete="given-name" required class={field} aria-describedby="k-name-err" />
+          <p id="k-name-err" class="err hidden text-sm font-semibold text-red-strong">Wpisz imię.</p>
+        </div>
+        <div class="grid gap-2">
+          <label for="k-mail" class="text-[15px] font-semibold">E-mail do odpowiedzi</label>
+          <input id="k-mail" name="email" type="email" autocomplete="email" required class={field} aria-describedby="k-mail-err" />
+          <p id="k-mail-err" class="err hidden text-sm font-semibold text-red-strong">Wpisz adres e-mail, np. jan@poczta.pl.</p>
+        </div>
+        <div class="grid gap-2">
+          <label for="k-msg" class="text-[15px] font-semibold">Pytanie</label>
+          <textarea id="k-msg" name="message" rows="3" required class:list={[field, 'resize-y']} aria-describedby="k-msg-err"></textarea>
+          <p id="k-msg-err" class="err hidden text-sm font-semibold text-red-strong">Napisz, o co chcesz zapytać.</p>
+        </div>
+        <button type="submit" class="btn btn-secondary w-full">Wyślij pytanie <Send aria-hidden="true" stroke-linecap="square" /></button>
+        <p class="text-sm text-muted">Odpowiadamy na <a class="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-red" href={`mailto:${event.organizer.email}`}>{event.organizer.email}</a></p>
+      </form>
+    </div>
+
+    <div class="faq self-start border-t border-line-strong">
       {faq.map((f) => (
         <details class="border-b border-line-strong">
           <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-5 font-condensed text-[22px] leading-[1.2] font-bold hover:text-accent">
@@ -37,3 +62,24 @@ import { faq, event } from '../data/event';
   }
   .faq details[open] summary::after { transform: translateY(3px) rotate(-135deg); }
 </style>
+
+<script>
+  // Formularz bez serwera: sprawdza pola i otwiera pocztę z gotową wiadomością do biura zawodów.
+  // Po podłączeniu usługi formularzy wystarczy podmienić blok `location.href` na fetch().
+  const form = document.querySelector<HTMLFormElement>('form.contact');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let first: HTMLElement | null = null;
+    for (const el of form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')) {
+      const bad = !el.value.trim() || (el.type === 'email' && !el.checkValidity());
+      el.setAttribute('aria-invalid', String(bad));
+      document.getElementById(`${el.id}-err`)?.classList.toggle('hidden', !bad);
+      if (bad && !first) first = el;
+    }
+    if (first) return first.focus();
+    const data = new FormData(form);
+    const subject = `Pytanie ze strony: ${data.get('name')}`;
+    const body = `${data.get('message')}\n\n${data.get('name')}, ${data.get('email')}`;
+    location.href = `mailto:${form.dataset.to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+</script>

@@ -1,10 +1,10 @@
 ---
-import { ArrowUpRight, Search } from '@lucide/astro';
+import { ArrowLeft, Search } from '@lucide/astro';
 import { db, Edition, Result, eq, asc } from 'astro:db';
 import Base from '../../layouts/Base.astro';
 
 export async function getStaticPaths() {
-  const years = await db.select({ year: Result.year }).from(Result).groupBy(Result.year);
+  const years = await db.select({ year: Edition.year }).from(Edition);
   return years.map(({ year }) => ({ params: { year: String(year) } }));
 }
 
@@ -23,16 +23,15 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
   name: `Wyniki ${edition.number} Crossu Straceńców ${year}`,
-  description: `Wyniki biegów ${races.join(', ')} na torze motocrossowym w Głogowie.`,
+  description: `Wyniki ${edition.number} edycji biegu na torze motocrossowym w Głogowie.`,
   temporalCoverage: edition.date ?? String(year),
-  isBasedOn: edition.resultsUrl,
   distribution: { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${site}/wyniki/${year}.json` },
 };
 ---
 
 <Base
   title={`Wyniki ${year}`}
-  description={`Wyniki ${edition.number} Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} sklasyfikowanych zawodników.`}
+  description={rows.length ? `Wyniki ${edition.number} Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} osób na mecie.` : `Wyniki ${edition.number} Crossu Straceńców w Głogowie (${year}).`}
   current="wyniki"
   jsonLd={jsonLd}
 >
@@ -41,12 +40,12 @@ const jsonLd = {
       <p class="eyebrow"><a href="/wyniki/" class="link-draw">Wyniki</a></p>
       <h1 id="rok-h1" class="display-xl">{year}</h1>
       <p class="lead max-w-[56ch] text-muted">
-        {edition.number} edycja{date ? `, ${date}` : ''}. {rows.length} osób na mecie.
-        Źródło: <a href={edition.resultsUrl!} rel="noopener" class="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-red">{edition.resultsLabel}<ArrowUpRight class="ml-0.5 inline size-4 align-[-2px]" aria-hidden="true" stroke-linecap="square" /></a>
+        {edition.number} edycja{date ? `, ${date}` : ''}.{rows.length ? ` ${rows.length} osób na mecie.` : ''}
       </p>
     </div>
   </section>
 
+  {rows.length ? (<>
   <div class="sticky top-16 z-40 border-y border-line bg-bg/95 backdrop-blur-sm lg:top-[72px]">
     <div class="wrap grid grid-cols-[minmax(0,1fr)] gap-3 py-3 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
       <nav aria-label="Biegi" class="min-w-0">
@@ -111,6 +110,17 @@ const jsonLd = {
       );
     })}
   </div>
+  </>) : (
+  <section class="bg-bg pb-16 lg:pb-24" aria-label="Brak tabel">
+    <div class="wrap">
+      <div class="grid place-items-center gap-4 bg-surface px-6 py-16 text-center">
+        <span class="font-display text-[clamp(72px,12vw,160px)] leading-none text-line-strong">{edition.number}</span>
+        <p class="max-w-[40ch] text-muted">Tabele wyników tej edycji pojawią się tu wkrótce.</p>
+        <a href="/wyniki/" class="btn btn-outline mt-2"><ArrowLeft aria-hidden="true" stroke-linecap="square" /> Wszystkie edycje</a>
+      </div>
+    </div>
+  </section>
+  )}
 </Base>
 
 <script>

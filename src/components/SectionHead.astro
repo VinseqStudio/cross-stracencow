@@ -1,0 +1,15 @@
+---
+// Nagłówek sekcji: tytuł po lewej, opis i działanie po prawej, wyrównane do góry.
+interface Props { id: string; title: string; lead?: string; tone?: 'muted' | 'fg' }
+const { id, title, lead } = Astro.props;
+---
+
+<header class="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-6">
+  <h2 id={id} class="display-lg">{title}</h2>
+  {(lead || Astro.slots.has('default')) && (
+    <div class="grid justify-items-start gap-5 lg:pt-2">
+      {lead && <p class="lead max-w-[44ch] text-muted">{lead}</p>}
+      <slot />
+    </div>
+  )}
+</header>

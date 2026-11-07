@@ -3,7 +3,7 @@ import { db, Edition, Result, eq, asc } from 'astro:db';
 
 // Wyniki edycji jako JSON: dla agentów AI, aplikacji i dziennikarzy.
 export async function getStaticPaths() {
-  const years = await db.select({ year: Result.year }).from(Result).groupBy(Result.year);
+  const years = await db.select({ year: Edition.year }).from(Edition);
   return years.map(({ year }) => ({ params: { year: String(year) } }));
 }
 
@@ -16,7 +16,6 @@ export const GET: APIRoute = async ({ params }) => {
     edition: edition.number,
     year,
     date: edition.date,
-    source: edition.resultsUrl,
     races: [...new Set(results.map((r) => r.race))],
     results: results.map(({ id, year: _y, ...r }) => r),
   };

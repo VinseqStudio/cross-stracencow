@@ -2,47 +2,60 @@
 // Moment „word-highlight”: zdanie Jerzego Górskiego zapala się słowo po słowie przy przewijaniu.
 import { Picture } from 'astro:assets';
 import { photo } from '../lib/photos';
+import { event } from '../data/event';
 
 const quote = 'To idea biegu, który wyzwala motywację do walki, aby zmierzyć się z własnymi słabościami.';
 const accent = 'słabościami.';
 const words = quote.split(' ');
+
+const timeline = [
+  { year: '1990', title: 'Mistrz świata w podwójnym Ironmanie', body: 'Jerzy Górski, były podopieczny Monaru, wygrywa jeden z najtrudniejszych wyścigów świata.' },
+  { year: '2011', title: 'Pierwszy Cross Straceńców', body: 'Tor motocrossowy w Górkowie po raz pierwszy staje się trasą biegu.' },
+  { year: '2027', title: `${event.edition} edycja`, body: `${event.dates.label}. Ta sama pętla, nowi straceńcy.`, highlight: true },
+];
 ---
 
 <section id="historia" class="story grain section-pad bg-bg text-fg" data-theme="dark" aria-labelledby="historia-title">
   <div class="wrap grid gap-12 lg:gap-16">
-    <h2 id="historia-title" class="display-lg">Dlaczego „Straceńców”?</h2>
+    <div class="grid gap-8">
+      <h2 id="historia-title" class="display-lg">Dlaczego „Straceńców”?</h2>
+      <figure class="grid gap-5">
+        <blockquote class="statement font-display text-[clamp(36px,6vw,84px)] leading-[1.02] uppercase">
+          <p class="max-w-[30ch]">
+            <span class="text-red" aria-hidden="true">„</span>{words.map((w, i) => (
+              <>{i > 0 && ' '}<span class:list={['word', w === accent && 'is-accent']}>{w}</span></>
+            ))}<span class="text-red" aria-hidden="true">”</span>
+          </p>
+        </blockquote>
+        <figcaption class="flex flex-wrap gap-x-2 text-[15px] leading-[22px]">
+          <span class="font-bold">Jerzy Górski</span><span class="text-muted">organizator Crossu Straceńców</span>
+        </figcaption>
+      </figure>
+    </div>
 
-    <figure class="grid gap-6">
-      <blockquote class="statement font-display text-[clamp(36px,6vw,80px)] leading-[1.02] uppercase">
-        <p class="max-w-[22ch]">
-          <span class="text-red" aria-hidden="true">„</span>{words.map((w, i) => (
-            <>{i > 0 && ' '}<span class:list={['word', w === accent && 'is-accent']}>{w}</span></>
-          ))}<span class="text-red" aria-hidden="true">”</span>
-        </p>
-      </blockquote>
-      <figcaption class="flex flex-wrap gap-x-2 text-[15px] leading-[22px]">
-        <span class="font-bold">Jerzy Górski</span><span class="text-muted">organizator Crossu Straceńców</span>
-      </figcaption>
-    </figure>
-
-    <div class="grid gap-8 md:grid-cols-2 md:items-center md:gap-6">
-      <div class="grid max-w-[60ch] gap-4 text-muted">
-        <p>
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
+      <div class="grid content-between gap-10">
+        <p class="max-w-[52ch] text-fg/85">
           Straceniec to ktoś spisany na straty. I ktoś, kto rzuca się na to, co wygląda na niemożliwe. Ten bieg zamienia
-          pierwsze znaczenie w drugie.
-        </p>
-        <p>
-          Jerzy Górski wyszedł z uzależnienia w ośrodku Monaru, a w 1990 r. wygrał mistrzostwa świata w podwójnym
-          Ironmanie. Od 2011 r. zaprasza na tor w Głogowie każdego, także podopiecznych Monaru, którzy co roku walczą tu
+          pierwsze znaczenie w drugie: startują tu zawodnicy klubów, rodziny, szkoły i podopieczni Monaru, którzy walczą
           o swoje mistrzostwa Polski.
         </p>
+        <ol class="timeline grid gap-6">
+          {timeline.map((t) => (
+            <li class="relative pl-12" data-highlight={t.highlight ? 'true' : undefined}>
+              <span class="block font-display text-[36px] leading-none tabular-nums">{t.year}</span>
+              <h3 class="mt-2 font-condensed text-[22px] leading-[1.15] font-bold">{t.title}</h3>
+              <p class="mt-1 max-w-[48ch] text-[15px] leading-[22px] text-muted">{t.body}</p>
+            </li>
+          ))}
+        </ol>
       </div>
-      <div class="aspect-[4/3] overflow-hidden">
+      <div class="min-h-[280px] overflow-hidden lg:min-h-0">
         <Picture
           src={photo('2025/2025-13.jpg')}
           alt="Zawodnik w koszulce z napisem Monar na mecie, obok sędzia w zielonej koszulce"
-          widths={[480, 720, 960]}
-          sizes="(min-width: 768px) 50vw, 100vw"
+          widths={[480, 720, 960, 1200]}
+          sizes="(min-width: 1024px) 720px, 100vw"
           formats={['avif', 'webp']}
           class="size-full object-cover"
         />
@@ -52,31 +65,53 @@ const words = quote.split(' ');
 </section>
 
 <style>
-  :global(.js) .statement .word { color: color-mix(in srgb, var(--text) 38%, var(--bg)); transition: color 0.2s linear; }
-  :global(.js) .statement .word.is-on { color: var(--text); }
-  :global(.js) .statement .word.is-accent.is-on, :global(html:not(.js)) .statement .word.is-accent { color: var(--red); }
+  /* Oś czasu: przerywana czerwona linia trasy i romby jak w systemie marki. */
+  .timeline { position: relative; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    background-image: linear-gradient(180deg, var(--red) 0 18px, transparent 18px 100%);
+    background-size: 100% 32px;
+  }
+  .timeline li::before {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 8px;
+    width: 15px;
+    height: 15px;
+    background: var(--bg);
+    border: 3px solid var(--text-muted);
+    transform: rotate(45deg);
+  }
+  .timeline li[data-highlight='true']::before { background: var(--red); border-color: var(--red); }
+
+  .statement .word { --o: 1; color: color-mix(in srgb, var(--text) calc(34% + 66% * var(--o)), var(--bg)); }
+  .statement .word.is-accent { color: color-mix(in srgb, var(--red) calc(34% + 66% * var(--o)), var(--bg)); }
+  :global(.js) .statement .word { --o: 0; }
   @media (prefers-reduced-motion: reduce) {
-    :global(.js) .statement .word { color: var(--text); }
+    :global(.js) .statement .word { --o: 1; }
   }
 </style>
 
 <script>
   import { scroll } from 'motion';
 
+  // Słowa rozjaśniają się płynnie, jedno po drugim, gdy cytat przechodzi przez ekran; w górę gasną.
   const words = [...document.querySelectorAll<HTMLElement>('.statement .word')];
   const block = document.querySelector<HTMLElement>('.statement');
-  if (block && words.length) {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      words.forEach((w) => w.classList.add('is-on'));
-    } else {
-      // Słowa zapalają się, gdy zdanie przechodzi przez środek ekranu; przy przewijaniu w górę gasną.
-      scroll(
-        (p: number) => {
-          const lit = Math.round(p * words.length);
-          words.forEach((w, i) => w.classList.toggle('is-on', i < lit));
-        },
-        { target: block, offset: ['start 0.8', 'end 0.45'] },
-      );
-    }
+  if (block && words.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const n = words.length;
+    scroll(
+      (p: number) => {
+        const t = p * (n + 1.5);
+        words.forEach((w, i) => w.style.setProperty('--o', String(Math.min(1, Math.max(0, (t - i) / 1.5)))));
+      },
+      { target: block, offset: ['start 0.92', 'end 0.3'] },
+    );
   }
 </script>

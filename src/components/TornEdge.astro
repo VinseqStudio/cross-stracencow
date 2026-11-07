@@ -1,17 +1,18 @@
 ---
 // Postrzępiona krawędź plakatu. Maks. dwie na stronę, tylko na przejściu jasny / ciemny.
-interface Props { from: string; to: string; seed?: number; flip?: boolean }
-const { from, to, seed = 7, flip = false } = Astro.props;
+// Zachodzi po 1px na sekcje obok, żeby między nimi nie było jasnej szczeliny.
+interface Props { from: string; to: string; seed?: number }
+const { from, to, seed = 7 } = Astro.props;
 
 let s = seed;
 const rnd = () => ((s = (s * 9301 + 49297) % 233280), s / 233280);
-const pts = ['M0,18', 'L0,9'];
+const pts = ['M0,20', 'L0,9'];
 for (let i = 1; i <= 120; i++) pts.push(`L${((i / 120) * 1000).toFixed(1)},${(4 + rnd() * 8 + (rnd() > 0.92 ? 4 : 0)).toFixed(1)}`);
-pts.push('L1000,18Z');
+pts.push('L1000,20Z');
 ---
 
-<div aria-hidden="true" class="block h-[18px] w-full leading-none" style={`background:${from};${flip ? 'transform:scaleY(-1)' : ''}`}>
-  <svg viewBox="0 0 1000 18" preserveAspectRatio="none" class="block size-full" style="margin-bottom:-1px">
+<div aria-hidden="true" class="relative z-[1] -my-px block h-5 w-full overflow-hidden leading-none" style={`background:${from}`}>
+  <svg viewBox="0 0 1000 20" preserveAspectRatio="none" class="absolute inset-0 block size-full">
     <path d={pts.join(' ')} fill={to} />
   </svg>
 </div>

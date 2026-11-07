@@ -1,7 +1,8 @@
 ---
 import { Picture } from 'astro:assets';
 import { ArrowRight } from '@lucide/astro';
-import { db, Edition, Result, eq, asc } from 'astro:db';
+import { db, Edition, Result, eq, asc, desc } from 'astro:db';
+import SectionHead from './SectionHead.astro';
 import { photo } from '../lib/photos';
 
 const year = 2025;
@@ -10,29 +11,24 @@ const km = (race: string) => Number(race.match(/(\d+)\s*km/)?.[1] ?? 0);
 const races = [...new Set(rows.map((r) => r.race))].sort((a, b) => km(b) - km(a));
 // Zwycięzca i zwyciężczyni każdego biegu, od najdłuższego.
 const winners = races.map((race) => ({
-    race,
-    man: rows.find((r) => r.race === race && r.sex === 'M'),
-    woman: rows.find((r) => r.race === race && r.sex === 'K'),
-  }));
-const years = (await db.select().from(Edition).orderBy(asc(Edition.year))).filter((e) => e.resultsUrl).slice(-10).reverse();
-const withData = new Set((await db.select({ year: Result.year }).from(Result).groupBy(Result.year)).map((r) => r.year));
+  race,
+  man: rows.find((r) => r.race === race && r.sex === 'M'),
+  woman: rows.find((r) => r.race === race && r.sex === 'K'),
+}));
+const editions = await db.select().from(Edition).orderBy(desc(Edition.year));
 ---
 
 <section id="wyniki" class="section-pad bg-bg" aria-labelledby="wyniki-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <header class="flex flex-wrap items-end justify-between gap-6">
-      <div class="grid max-w-[700px] gap-3">
-        <h2 id="wyniki-title" class="display-lg">Wyniki z dziesięciu edycji</h2>
-        <p class="lead max-w-[48ch] text-muted">Najszybsi na mecie XV edycji, 27 kwietnia 2025.</p>
-      </div>
+    <SectionHead id="wyniki-title" title="Wyniki wszystkich edycji" lead="Najszybsi na mecie XV edycji, 27 kwietnia 2025. Tabele każdego roku znajdziesz w archiwum.">
       <a href="/wyniki/" class="btn btn-outline">Wszystkie wyniki <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
-    </header>
+    </SectionHead>
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
-      <div class="grid content-start gap-8">
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-6">
+      <div class="grid content-between gap-8">
         <dl class="grid border-t border-line">
           {winners.map((w) => (
-            <div class="grid gap-2 border-b border-line py-5 sm:grid-cols-[180px_1fr] sm:gap-6">
+            <div class="grid gap-2 border-b border-line py-5 sm:grid-cols-[200px_1fr] sm:gap-6">
               <dt class="font-condensed text-xl leading-tight font-bold">{w.race}</dt>
               <dd class="grid gap-1.5">
                 {[w.man, w.woman].filter(Boolean).map((r) => (
@@ -46,14 +42,13 @@ const withData = new Set((await db.select({ year: Result.year }).from(Result).gr
           ))}
         </dl>
         <nav aria-label="Wyniki według roku">
-          <ul class="flex flex-wrap gap-2">
-            {years.map((e) => (
+          <ul class="grid grid-cols-4 gap-2 sm:grid-cols-8">
+            {editions.map((e) => (
               <li>
-                <a
-                  href={withData.has(e.year) ? `/wyniki/${e.year}/` : e.resultsUrl!}
-                  class="inline-flex min-h-11 items-center rounded-sm border border-line-strong px-4 font-condensed text-lg font-semibold tabular-nums transition-colors hover:border-fg"
-                  rel={withData.has(e.year) ? undefined : 'noopener'}
-                >{e.year}</a>
+                <a href={`/wyniki/${e.year}/`} class="grid min-h-14 place-items-center rounded-sm border border-line-strong px-2 transition-colors hover:border-fg hover:bg-fg hover:text-bg">
+                  <span class="font-condensed text-lg leading-none font-bold tabular-nums">{e.year}</span>
+                  <span class="text-[12px] leading-4 text-muted">{e.number}</span>
+                </a>
               </li>
             ))}
           </ul>
@@ -63,8 +58,8 @@ const withData = new Set((await db.select({ year: Result.year }).from(Result).gr
         <Picture
           src={photo('2025/2025-09.jpg')}
           alt="Zawodnik w żółtej koszulce z numerem 30 unosi pięść pod bramą mety"
-          widths={[480, 720, 960, 1200]}
-          sizes="(min-width: 1024px) 620px, 100vw"
+          widths={[480, 720, 960]}
+          sizes="(min-width: 1024px) 520px, 100vw"
           formats={['avif', 'webp']}
           class="size-full object-cover"
         />

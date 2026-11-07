@@ -6,14 +6,29 @@ const { edgeFrom = 'var(--bg)' } = Astro.props as { edgeFrom?: string };
 
 const columns = [
   { title: 'Bieg', links: [{ label: 'Dystanse', href: '/#dystanse' }, { label: 'Trasa', href: '/#trasa' }, { label: 'Program', href: '/#program' }, { label: 'Pytania', href: '/#faq' }] },
-  { title: 'Archiwum', links: [{ label: 'Galeria', href: '/galeria/' }, { label: 'Wyniki', href: '/wyniki/' }, { label: 'Regulamin XVI edycji', href: 'https://crossstracencow.pl/images/2026/regulamin-cross-2026vv.pdf' }] },
-  { title: 'Kontakt', links: [{ label: event.organizer.email, href: `mailto:${event.organizer.email}` }, { label: 'Facebook', href: event.facebook }, { label: 'sport-gorski.pl', href: event.organizer.url }] },
+  { title: 'Archiwum', links: [{ label: 'Galeria', href: '/galeria/' }, { label: 'Wyniki', href: '/wyniki/' }, { label: 'Historia', href: '/#historia' }] },
+  { title: 'Kontakt', links: [{ label: event.organizer.email, href: `mailto:${event.organizer.email}` }, { label: 'Facebook', href: event.facebook }] },
 ];
 ---
 
 <TornEdge from={edgeFrom} to="#121211" seed={11} />
-<footer id="kontakt" class="grain bg-bg pt-16 pb-8 text-fg lg:pt-24" data-theme="dark">
-  <div class="wrap grid gap-12">
+<footer id="kontakt" class="grain bg-bg pb-8 text-fg" data-theme="dark">
+  <div class="partners border-b border-line py-6 lg:py-8" aria-labelledby="partnerzy-h">
+    <h2 id="partnerzy-h" class="sr-only">Organizatorzy i partnerzy</h2>
+    <div class="marquee flex overflow-hidden">
+      {[0, 1].map((copy) => (
+        <ul class="marquee-track flex shrink-0 items-center" aria-hidden={copy === 1 ? 'true' : undefined}>
+          {partners.map((p) => (
+            <li class="flex shrink-0 items-center font-condensed text-[22px] leading-none font-bold whitespace-nowrap text-muted lg:text-[28px]">
+              {p}<span class="trail mx-8 w-10 lg:mx-10" aria-hidden="true"></span>
+            </li>
+          ))}
+        </ul>
+      ))}
+    </div>
+  </div>
+
+  <div class="wrap grid gap-12 pt-14 lg:pt-20">
     <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
       <div class="grid content-start justify-items-start gap-5 sm:col-span-2 lg:col-span-1">
         <img src="/logo-inverse.webp" alt="Cross Straceńców Głogów" width="125" height="88" loading="lazy" class="h-22 w-auto" />
@@ -31,16 +46,21 @@ const columns = [
       ))}
     </div>
 
-    <div class="grid gap-3">
-      <h3 class="font-condensed text-[15px] font-bold tracking-[0.06em] text-muted uppercase">Organizatorzy i partnerzy</h3>
-      <ul class="flex flex-wrap gap-x-6 gap-y-2 font-condensed text-lg font-semibold text-muted">
-        {partners.map((p) => <li>{p.name}</li>)}
-      </ul>
-    </div>
-
     <div class="flex flex-wrap justify-between gap-3 border-t border-line pt-5 text-sm text-muted">
       <span>© {new Date().getFullYear()} {event.organizer.name}</span>
-      <span>Zdjęcia: archiwum Crossu Straceńców, edycja 2025: Katarzyna Ostrowska</span>
+      <span>{event.venue.name}, {event.venue.city}</span>
     </div>
   </div>
 </footer>
+
+<style>
+  /* Pasek partnerów przewija się bez końca; zatrzymuje się po najechaniu i przy ograniczonym ruchu. */
+  .marquee-track { animation: marquee 48s linear infinite; }
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+  @keyframes marquee { to { transform: translateX(-100%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee { flex-wrap: wrap; justify-content: center; }
+    .marquee-track { animation: none; flex-wrap: wrap; justify-content: center; row-gap: 12px; }
+    .marquee-track[aria-hidden] { display: none; }
+  }
+</style>

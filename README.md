@@ -33,8 +33,11 @@ npm run preview
   - `node scripts/import-datasport.mjs 2025:5483 2024:4696` (rok:id wyników Datasport)
   - `node scripts/import-sts.mjs 2023:cross2023 2022:cross2022` (rok:adres na live.sts-timing.pl)
   Baza powstaje z `db/seed.ts` przy każdym `dev` i `build`.
-- **Zdjęcia**: `src/assets/photos/<rok>/`. Galeria czyta wszystkie pliki `.jpg` z folderu roku;
-  lata w galerii: `galleryYears` w `src/lib/photos.ts`. Źródła obecnych zdjęć: `src/assets/photos/sources.csv`.
+- **Zdjęcia**: `src/assets/photos/<rok>/`. Galeria pokazuje wszystkie edycje z `db/data/editions.ts`;
+  rok bez plików dostaje pustą ramkę z numerem edycji, dopóki nie dodasz zdjęć do jego folderu.
+- **Partnerzy** (pasek w stopce): lista `partners` w `src/data/event.ts`.
+- **Formularz pytań** (sekcja FAQ) nie ma serwera: otwiera pocztę z gotową wiadomością na adres biura.
+  Po wyborze usługi formularzy podmień w `src/components/Faq.astro` przekierowanie na `fetch()`.
 - **Logo**: `public/logo.webp` i `public/logo-inverse.webp` (zrastrowane z SVG w `src/assets/brand/`).
 
 ## Dla agentów AI i wyszukiwarek

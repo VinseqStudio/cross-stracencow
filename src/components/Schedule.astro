@@ -1,4 +1,5 @@
 ---
+import SectionHead from './SectionHead.astro';
 import { schedule } from '../data/event';
 
 const days = [
@@ -9,10 +10,7 @@ const days = [
 
 <section id="program" class="section-pad bg-bg" aria-labelledby="program-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <header class="grid max-w-[880px] gap-3">
-      <h2 id="program-title" class="display-lg">Dwa dni na torze</h2>
-      <p class="lead max-w-[56ch] text-muted">Godziny z XVI edycji. Program XVII edycji potwierdzimy w regulaminie.</p>
-    </header>
+    <SectionHead id="program-title" title="Dwa dni na torze" lead="Sobota należy do biegów głównych, niedziela do sztafet i dzieci. Biuro zawodów działa w namiocie przy torze." />
 
     <div class="grid gap-10 md:grid-cols-2 md:gap-6">
       {days.map((day) => (

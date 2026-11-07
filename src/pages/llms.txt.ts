@@ -17,14 +17,14 @@ export const GET: APIRoute = async ({ site }) => {
 - Edycja: ${event.edition}
 - Termin: ${event.dates.label}${event.dates.assumed ? ' (do potwierdzenia w regulaminie)' : ''}
 - Miejsce: ${event.venue.name}, ${event.venue.city}
-- Zapisy: ${event.registration.open ? 'otwarte' : event.registration.note}
+- Zapisy: ${event.registration.open ? 'otwarte' : 'jeszcze nieotwarte'}
 - Kontakt: ${event.organizer.email}
 
-## Dystanse (według regulaminu XVI edycji, 2026)
+## Dystanse
 
-${distances.map((d) => `- ${d.name}, ${d.distance}: ${d.description} ${d.facts.map((f) => `${f.label}: ${f.value}`).join('; ')}. Opłata ${d.price} (${d.priceNote}).`).join('\n')}
+${distances.map((d) => `- ${d.name}, ${d.distance}: ${d.description} ${d.facts.map((f) => `${f.label}: ${f.value}`).join('; ')}. Opłata ${d.price}, limit ${d.limit}.`).join('\n')}
 
-## Program (XVI edycja)
+## Program
 
 Sobota:
 ${schedule.saturday.map((r) => `- ${r.time} ${r.what}${r.sub ? `: ${r.sub}` : ''}`).join('\n')}
@@ -39,8 +39,7 @@ ${faq.map((f) => `- ${f.q} ${f.a}`).join('\n')}
 ## Wyniki
 
 ${editions
-  .filter((e) => e.resultsUrl)
-  .map((e) => `- ${e.year} (${e.number} edycja): ${withData.has(e.year) ? `${base}/wyniki/${e.year}/ (JSON: ${base}/wyniki/${e.year}.json)` : e.resultsUrl}`)
+  .map((e) => `- ${e.year} (${e.number} edycja): ${base}/wyniki/${e.year}/${withData.has(e.year) ? ` (JSON: ${base}/wyniki/${e.year}.json)` : ' (tabele w przygotowaniu)'}`)
   .join('\n')}
 
 ## Strony

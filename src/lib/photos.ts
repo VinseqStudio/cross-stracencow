@@ -17,4 +17,3 @@ export function photosOf(year: number): { rel: string; img: ImageMetadata }[] {
     .map(([p, m]) => ({ rel: p.replace('/src/assets/photos/', ''), img: m.default }));
 }
 
-export const galleryYears = [2025, 2024, 2023, 2022, 2020, 2019, 2018, 2017, 2016];
