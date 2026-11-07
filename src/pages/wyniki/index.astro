@@ -1,0 +1,46 @@
+---
+import { ArrowRight, ArrowUpRight } from '@lucide/astro';
+import { db, Edition, Result, desc, count } from 'astro:db';
+import Base from '../../layouts/Base.astro';
+
+const editions = (await db.select().from(Edition).orderBy(desc(Edition.year))).filter((e) => e.resultsUrl);
+const counts = new Map(
+  (await db.select({ year: Result.year, n: count() }).from(Result).groupBy(Result.year)).map((r) => [r.year, r.n]),
+);
+const fmt = (iso?: string | null) =>
+  iso ? new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso)) : null;
+---
+
+<Base title="Wyniki" description="Wyniki Crossu Straceńców w Głogowie z kolejnych edycji, od 2014 roku. Pełne tabele z lat 2022 do 2025 i odnośniki do oficjalnych źródeł." current="wyniki">
+  <section class="bg-bg pt-12 pb-16 lg:pt-20 lg:pb-24" aria-labelledby="wyniki-h1">
+    <div class="wrap grid gap-10">
+      <div class="grid gap-6">
+        <h1 id="wyniki-h1" class="display-xl">Wyniki</h1>
+        <p class="lead max-w-[56ch] text-muted">Pełne tabele z ostatnich czterech edycji. Starsze wyniki prowadzą do oficjalnych stron pomiaru czasu.</p>
+      </div>
+
+      <ul class="grid border-t border-line">
+        {editions.map((e) => {
+          const n = counts.get(e.year);
+          const href = n ? `/wyniki/${e.year}/` : e.resultsUrl!;
+          return (
+            <li class="border-b border-line">
+              <a href={href} rel={n ? undefined : 'noopener'} class="group grid grid-cols-[auto_1fr_auto] items-center gap-x-5 gap-y-1 py-5 sm:grid-cols-[120px_1fr_auto]">
+                <span class="font-display text-[40px] leading-none tabular-nums">{e.year}</span>
+                <span class="grid">
+                  <span class="font-condensed text-xl leading-tight font-bold">{e.number} edycja</span>
+                  <span class="text-[15px] text-muted">
+                    {n ? `${n} sklasyfikowanych${fmt(e.date) ? `, ${fmt(e.date)}` : ''}` : `Wyniki: ${e.resultsLabel}`}
+                  </span>
+                </span>
+                <span class="grid size-11 place-items-center rounded-sm border border-line-strong transition-colors group-hover:border-fg group-hover:bg-fg group-hover:text-bg">
+                  {n ? <ArrowRight class="size-5" aria-hidden="true" stroke-linecap="square" /> : <ArrowUpRight class="size-5" aria-hidden="true" stroke-linecap="square" />}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </section>
+</Base>

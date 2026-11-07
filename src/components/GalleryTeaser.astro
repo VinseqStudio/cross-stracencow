@@ -1,0 +1,41 @@
+---
+import { Picture } from 'astro:assets';
+import { ArrowRight } from '@lucide/astro';
+import { photo } from '../lib/photos';
+
+// Mozaika z różnych lat. Każde zdjęcie prowadzi do swojego roku w galerii.
+const tiles = [
+  { rel: '2025/2025-07.jpg', year: 2025, alt: 'Zawodnik czołga się przez błotnistą kałużę', cls: 'col-span-2 row-span-2' },
+  { rel: '2023/2023-07.jpg', year: 2023, alt: 'Czterech biegaczy z uniesionymi rękami na tle toru', cls: '' },
+  { rel: '2024/2024-12.jpg', year: 2024, alt: 'Mama i mała córka z medalem na szyi siedzą na trawie', cls: '' },
+  { rel: '2019/2019-08.jpg', year: 2019, alt: 'Zawodniczki pomagają sobie nawzajem w błocie', cls: '' },
+  { rel: '2022/2022-04.jpg', year: 2022, alt: 'Zawodniczka z numerem 76 rozbryzguje wodę w rowie', cls: '' },
+];
+---
+
+<section id="galeria" class="section-pad bg-surface" aria-labelledby="galeria-title">
+  <div class="wrap grid gap-10 lg:gap-12">
+    <header class="flex flex-wrap items-end justify-between gap-6">
+      <div class="grid max-w-[700px] gap-3">
+        <h2 id="galeria-title" class="display-lg">Dziesięć lat w błocie</h2>
+        <p class="lead max-w-[48ch] text-muted">Zdjęcia z kolejnych edycji, od 2016 roku do dziś.</p>
+      </div>
+      <a href="/galeria/" class="btn btn-outline">Otwórz galerię <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
+    </header>
+
+    <div class="grid auto-rows-[1fr] grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+      {tiles.map((t) => (
+        <a href={`/galeria/#rok-${t.year}`} class:list={['photo-zoom block aspect-[4/3] h-full w-full', t.cls]} aria-label={`Galeria ${t.year}: ${t.alt}`}>
+          <Picture
+            src={photo(t.rel)}
+            alt=""
+            widths={[360, 600, 900, 1200]}
+            sizes={t.cls ? '(min-width: 1024px) 620px, 100vw' : '(min-width: 1024px) 310px, 50vw'}
+            formats={['avif', 'webp']}
+            class="size-full object-cover"
+          />
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

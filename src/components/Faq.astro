@@ -1,0 +1,39 @@
+---
+import { faq, event } from '../data/event';
+---
+
+<section id="faq" class="section-pad bg-surface" aria-labelledby="faq-title">
+  <div class="wrap grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
+    <header class="grid content-start gap-3">
+      <h2 id="faq-title" class="display-lg">Zanim przyjedziesz</h2>
+      <p class="lead max-w-[40ch] text-muted">
+        Nie ma tu odpowiedzi? Napisz na <a class="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-red" href={`mailto:${event.organizer.email}`}>{event.organizer.email}</a>.
+      </p>
+    </header>
+    <div class="faq border-t border-line-strong">
+      {faq.map((f) => (
+        <details class="border-b border-line-strong">
+          <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-5 font-condensed text-[22px] leading-[1.2] font-bold hover:text-accent">
+            {f.q}
+          </summary>
+          <p class="max-w-[64ch] pb-5 text-muted">{f.a}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: '';
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-right: 2.5px solid currentColor;
+    border-bottom: 2.5px solid currentColor;
+    transform: translateY(-4px) rotate(45deg);
+    transition: transform 0.15s ease;
+  }
+  .faq details[open] summary::after { transform: translateY(3px) rotate(-135deg); }
+</style>

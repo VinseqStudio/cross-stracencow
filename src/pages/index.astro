@@ -1,0 +1,63 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import TornEdge from '../components/TornEdge.astro';
+import Distances from '../components/Distances.astro';
+import Route from '../components/Route.astro';
+import Story from '../components/Story.astro';
+import Schedule from '../components/Schedule.astro';
+import GalleryTeaser from '../components/GalleryTeaser.astro';
+import ResultsTeaser from '../components/ResultsTeaser.astro';
+import Faq from '../components/Faq.astro';
+import { event, distances, faq } from '../data/event';
+
+const site = Astro.site!.href.replace(/\/$/, '');
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${event.edition} ${event.name}`,
+    description: 'Bieg przełajowy z przeszkodami naturalnymi po torze motocrossowym w Głogowie: 5 km, 10 km, sztafety 6 × 1 km i biegi dzieci.',
+    sport: 'Bieg przełajowy',
+    startDate: event.dates.start,
+    endDate: event.dates.end,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: {
+      '@type': 'Place',
+      name: event.venue.name,
+      address: { '@type': 'PostalAddress', addressLocality: event.venue.city, addressRegion: 'dolnośląskie', addressCountry: 'PL' },
+    },
+    image: [`${site}/og.jpg`],
+    organizer: { '@type': 'Organization', name: event.organizer.name, url: event.organizer.url, email: event.organizer.email },
+    subEvent: distances.map((d) => ({
+      '@type': 'SportsEvent',
+      name: `${d.name} ${d.distance}`,
+      description: d.description,
+      offers: { '@type': 'Offer', price: d.price.replace(/\D/g, ''), priceCurrency: 'PLN' },
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+---
+
+<Base
+  title="Cross Straceńców Głogów: bieg przełajowy po torze motocrossowym"
+  description="Cross Straceńców w Głogowie: 5 i 10 km przez rowy z wodą, błoto i piaszczyste podbiegi, sztafety i biegi dzieci. Galeria i wyniki z dziesięciu edycji."
+  jsonLd={jsonLd}
+  footerEdge="var(--surface)"
+>
+  <Hero />
+  <TornEdge from="#121211" to="#ffffff" seed={3} />
+  <Distances />
+  <Route />
+  <Story />
+  <Schedule />
+  <GalleryTeaser />
+  <ResultsTeaser />
+  <Faq />
+</Base>

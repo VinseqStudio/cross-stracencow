@@ -1,0 +1,30 @@
+{
+  "name": "cross-stracencow",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "import:results": "node scripts/import-datasport.mjs",
+    "photos": "node scripts/prepare-photos.mjs"
+  },
+  "dependencies": {
+    "@astrojs/db": "0.21.3",
+    "@astrojs/sitemap": "3.7.4",
+    "@fontsource/anton": "5.3.0",
+    "@fontsource/barlow": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0",
+    "@lucide/astro": "1.61.0",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.4.2",
+    "esbuild": "0.28.2",
+    "motion": "^14.6.0",
+    "photoswipe": "5.4.4",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "sharp": "0.35.5"
+  }
+}

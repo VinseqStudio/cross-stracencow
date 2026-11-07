@@ -1,0 +1,117 @@
+---
+import { Picture } from 'astro:assets';
+import { ArrowRight } from '@lucide/astro';
+import { photo } from '../lib/photos';
+import { event } from '../data/event';
+
+const facts = [
+  { label: 'Termin', value: event.dates.label },
+  { label: 'Miejsce', value: `${event.venue.name}, ${event.venue.city}` },
+  { label: 'Dystanse', value: 'od 450 m do 10 km' },
+  { label: 'Opłata', value: `od ${event.feeFrom}` },
+];
+---
+
+<section class="hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="hero-title">
+  <div class="hero-media absolute inset-x-0 top-0 -z-10 h-[64svh] lg:inset-0 lg:h-auto" aria-hidden="true">
+    <Picture
+      src={photo('2025/2025-03.jpg')}
+      alt=""
+      widths={[480, 768, 1080, 1350]}
+      sizes="100vw"
+      formats={['avif', 'webp']}
+      loading="eager"
+      fetchpriority="high"
+      class="size-full object-cover object-[50%_40%] saturate-[.85]"
+    />
+  </div>
+
+  <div class="wrap grid gap-12 pt-[48svh] pb-12 sm:pt-[44svh] lg:min-h-[calc(100svh-72px)] lg:grid-cols-[minmax(0,1fr)_400px] lg:items-end lg:gap-24 lg:pt-36 lg:pb-24">
+    <div class="grid justify-items-start gap-6">
+      <p class="eyebrow" data-enter>{event.edition} edycja, {event.dates.label}</p>
+      <h1 id="hero-title" class="display-xl max-w-[11ch]">
+        <span class="block" data-enter>Spisany na straty?</span>
+        <span class="block text-red" data-enter>Wbiegnij na metę.</span>
+      </h1>
+      <span class="trail w-[min(240px,60%)] origin-left" data-enter-trail></span>
+      <p class="lead max-w-[40ch] text-fg/90" data-enter>
+        Bieg przełajowy po torze motocrossowym w Głogowie. Rowy z wodą, błoto i piaszczyste podbiegi na 5 i 10 km,
+        do tego sztafety i biegi dzieci.
+      </p>
+      <div class="flex w-full flex-wrap gap-3 sm:w-auto" data-enter>
+        <a href="#dystanse" class="btn btn-secondary min-h-[60px] w-full px-7 text-[19px] sm:w-auto">Zobacz dystanse <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
+      </div>
+    </div>
+
+    <aside class="grid gap-5 rounded-sm bg-raised p-6 text-fg shadow-soft" data-theme="light" aria-label="Najważniejsze informacje" data-enter>
+      <span class="inline-flex items-center gap-2 font-condensed text-[15px] font-bold tracking-[0.06em] uppercase">
+        <span class="size-2.5 rounded-full bg-muted" aria-hidden="true"></span>Zapisy wkrótce
+      </span>
+      <dl class="grid grid-cols-[auto_1fr] border-t border-line text-[15px] leading-[22px]">
+        {facts.map((f) => (
+          <>
+            <dt class="border-b border-line py-3 pr-4 text-muted">{f.label}</dt>
+            <dd class="border-b border-line py-3 text-right font-semibold">{f.value}</dd>
+          </>
+        ))}
+      </dl>
+      <div class="grid gap-2">
+        <span class="text-[15px] text-muted">Do startu zostało</span>
+        <div class="countdown flex items-baseline gap-4 tabular-nums" data-target={event.dates.start} role="timer" aria-live="off">
+          <span><b class="font-display text-4xl font-normal" data-d>–</b> <span class="font-condensed text-[15px] font-semibold text-muted">dni</span></span>
+          <span><b class="font-display text-4xl font-normal" data-h>–</b> <span class="font-condensed text-[15px] font-semibold text-muted">godz.</span></span>
+          <span><b class="font-display text-4xl font-normal" data-m>–</b> <span class="font-condensed text-[15px] font-semibold text-muted">min</span></span>
+        </div>
+      </div>
+      <p class="text-[15px] leading-[22px] text-muted">{event.registration.note}</p>
+    </aside>
+  </div>
+</section>
+
+<style>
+  .hero-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(18, 18, 17, 0.1) 0%, rgba(18, 18, 17, 0.4) 35%, rgba(18, 18, 17, 0.93) 66%, #121211 100%);
+  }
+  @media (min-width: 1024px) {
+    .hero-media::after {
+      background: linear-gradient(90deg, rgba(18, 18, 17, 0.92) 0%, rgba(18, 18, 17, 0.72) 45%, rgba(18, 18, 17, 0.3) 100%);
+    }
+  }
+  :global(.js) .hero [data-enter] { opacity: 0; }
+  :global(.js) .hero [data-enter-trail] { transform: skewX(-12deg) scaleX(0); }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .hero [data-enter] { opacity: 1; }
+    :global(.js) .hero [data-enter-trail] { transform: skewX(-12deg); }
+  }
+</style>
+
+<script>
+  import { animate, stagger } from 'motion';
+
+  // Wejście hero: jeden raz przy załadowaniu.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) {
+    animate('.hero-media img', { scale: [1.08, 1] }, { duration: 1.6, ease: [0.22, 1, 0.36, 1] });
+    animate('.hero [data-enter]', { opacity: [0, 1], y: [24, 0] }, { duration: 0.7, delay: stagger(0.08, { startDelay: 0.1 }), ease: [0.22, 1, 0.36, 1] });
+    animate('.hero [data-enter-trail]', { transform: ['skewX(-12deg) scaleX(0)', 'skewX(-12deg) scaleX(1)'] }, { duration: 0.6, delay: 0.45, ease: [0.22, 1, 0.36, 1] });
+  }
+
+  // Licznik do startu: pełne minuty, bez tykających sekund.
+  const el = document.querySelector<HTMLElement>('.countdown');
+  if (el) {
+    const target = new Date(el.dataset.target!).getTime();
+    const tick = () => {
+      const ms = Math.max(0, target - Date.now());
+      const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
+      el.querySelector('[data-d]')!.textContent = String(d);
+      el.querySelector('[data-h]')!.textContent = String(h);
+      el.querySelector('[data-m]')!.textContent = String(m);
+      el.setAttribute('aria-label', `Do startu: ${d} dni, ${h} godz., ${m} min`);
+    };
+    tick();
+    setInterval(tick, 30_000);
+  }
+</script>

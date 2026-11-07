@@ -1,0 +1,82 @@
+---
+// Moment „word-highlight”: zdanie Jerzego Górskiego zapala się słowo po słowie przy przewijaniu.
+import { Picture } from 'astro:assets';
+import { photo } from '../lib/photos';
+
+const quote = 'To idea biegu, który wyzwala motywację do walki, aby zmierzyć się z własnymi słabościami.';
+const accent = 'słabościami.';
+const words = quote.split(' ');
+---
+
+<section id="historia" class="story grain section-pad bg-bg text-fg" data-theme="dark" aria-labelledby="historia-title">
+  <div class="wrap grid gap-12 lg:gap-16">
+    <h2 id="historia-title" class="display-lg">Dlaczego „Straceńców”?</h2>
+
+    <figure class="grid gap-6">
+      <blockquote class="statement font-display text-[clamp(36px,6vw,80px)] leading-[1.02] uppercase">
+        <p class="max-w-[22ch]">
+          <span class="text-red" aria-hidden="true">„</span>{words.map((w, i) => (
+            <>{i > 0 && ' '}<span class:list={['word', w === accent && 'is-accent']}>{w}</span></>
+          ))}<span class="text-red" aria-hidden="true">”</span>
+        </p>
+      </blockquote>
+      <figcaption class="flex flex-wrap gap-x-2 text-[15px] leading-[22px]">
+        <span class="font-bold">Jerzy Górski</span><span class="text-muted">organizator Crossu Straceńców</span>
+      </figcaption>
+    </figure>
+
+    <div class="grid gap-8 md:grid-cols-2 md:items-center md:gap-6">
+      <div class="grid max-w-[60ch] gap-4 text-muted">
+        <p>
+          Straceniec to ktoś spisany na straty. I ktoś, kto rzuca się na to, co wygląda na niemożliwe. Ten bieg zamienia
+          pierwsze znaczenie w drugie.
+        </p>
+        <p>
+          Jerzy Górski wyszedł z uzależnienia w ośrodku Monaru, a w 1990 r. wygrał mistrzostwa świata w podwójnym
+          Ironmanie. Od 2011 r. zaprasza na tor w Głogowie każdego, także podopiecznych Monaru, którzy co roku walczą tu
+          o swoje mistrzostwa Polski.
+        </p>
+      </div>
+      <div class="aspect-[4/3] overflow-hidden">
+        <Picture
+          src={photo('2025/2025-13.jpg')}
+          alt="Zawodnik w koszulce z napisem Monar na mecie, obok sędzia w zielonej koszulce"
+          widths={[480, 720, 960]}
+          sizes="(min-width: 768px) 50vw, 100vw"
+          formats={['avif', 'webp']}
+          class="size-full object-cover"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  :global(.js) .statement .word { color: color-mix(in srgb, var(--text) 38%, var(--bg)); transition: color 0.2s linear; }
+  :global(.js) .statement .word.is-on { color: var(--text); }
+  :global(.js) .statement .word.is-accent.is-on, :global(html:not(.js)) .statement .word.is-accent { color: var(--red); }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .statement .word { color: var(--text); }
+  }
+</style>
+
+<script>
+  import { scroll } from 'motion';
+
+  const words = [...document.querySelectorAll<HTMLElement>('.statement .word')];
+  const block = document.querySelector<HTMLElement>('.statement');
+  if (block && words.length) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      words.forEach((w) => w.classList.add('is-on'));
+    } else {
+      // Słowa zapalają się, gdy zdanie przechodzi przez środek ekranu; przy przewijaniu w górę gasną.
+      scroll(
+        (p: number) => {
+          const lit = Math.round(p * words.length);
+          words.forEach((w, i) => w.classList.toggle('is-on', i < lit));
+        },
+        { target: block, offset: ['start 0.8', 'end 0.45'] },
+      );
+    }
+  }
+</script>

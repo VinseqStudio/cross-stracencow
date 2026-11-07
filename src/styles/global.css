@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+/* Cross Straceńców: tokeny z systemu marki (tokens.json v2). Jasny motyw domyślny,
+   ciemny tylko w sekcjach z data-theme="dark" (hero, historia, stopka). */
+:root,
+[data-theme="light"] {
+  --red: #ea1d28;
+  --red-strong: #c4121c;
+  --red-hover: #a80f18;
+  --on-red: #ffffff;
+  --accent-text: #c4121c;
+  --ink: #181817;
+  --bg: #ffffff;
+  --surface: #f6f3ee;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ede8e0;
+  --text: #181817;
+  --text-muted: #5f5a53;
+  --border: #ddd6cb;
+  --border-strong: #8c877f;
+  --focus: #181817;
+  --sand: #e9dfd0;
+  --medal-gold: #8a6a1e;
+  --medal-silver: #6f747b;
+  --medal-copper: #9a5230;
+  --success: #1e7a46;
+  --shadow-soft: 0 1px 2px rgba(24, 24, 23, 0.06), 0 12px 32px rgba(24, 24, 23, 0.1);
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+[data-theme="dark"] {
+  --red-strong: #d0161f;
+  --red-hover: #b5101a;
+  --accent-text: #ff4d55;
+  --bg: #121211;
+  --surface: #1c1c1a;
+  --surface-raised: #262623;
+  --surface-sunken: #0b0b0a;
+  --text: #f4f1ec;
+  --text-muted: #aba59c;
+  --border: #34322e;
+  --border-strong: #77726a;
+  --focus: #f4f1ec;
+  --sand: #3a3128;
+  --medal-gold: #d2a94e;
+  --medal-silver: #a9aeb5;
+  --medal-copper: #d08a5c;
+  --success: #4fbf7f;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+@theme inline {
+  --color-red: var(--red);
+  --color-red-strong: var(--red-strong);
+  --color-red-hover: var(--red-hover);
+  --color-on-red: var(--on-red);
+  --color-accent: var(--accent-text);
+  --color-ink: var(--ink);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-sunken: var(--surface-sunken);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-sand: var(--sand);
+  --color-gold: var(--medal-gold);
+  --color-silver: var(--medal-silver);
+  --color-copper: var(--medal-copper);
+  --color-success: var(--success);
+  --shadow-soft: var(--shadow-soft);
+}
+
+@theme {
+  --font-display: "Anton", "Arial Narrow", Impact, sans-serif;
+  --font-condensed: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --radius-sm: 2px;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Baza ---------- */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 80px;
+  }
+  body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 27px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  ::selection { background: var(--red-strong); color: var(--on-red); }
+}
+
+/* ---------- Kontener: 1240px treści, marginesy 16 / 24 / 32 ---------- */
+@utility wrap {
+  width: 100%;
+  max-width: calc(1240px + 2 * var(--gutter, 16px));
+  margin-inline: auto;
+  padding-inline: var(--gutter, 16px);
+  --gutter: 16px;
+  @media (width >= 640px) { --gutter: 24px; }
+  @media (width >= 1024px) { --gutter: 32px; }
+}
+
+/* Pionowy rytm sekcji: 64 na telefonie, 96 od 1024px. */
+@utility section-pad {
+  padding-block: 64px;
+  @media (width >= 1024px) { padding-block: 96px; }
+}
+
+/* ---------- Typografia ---------- */
+@utility display-xl {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(56px, 8.4vw, 112px);
+  line-height: 0.9;
+  letter-spacing: 0.003em;
+}
+@utility display-lg {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: clamp(40px, 5.6vw, 64px);
+  line-height: 0.98;
+  letter-spacing: 0.005em;
+}
+@utility display-md {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+@utility eyebrow {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+@utility lead {
+  font-size: 19px;
+  line-height: 29px;
+  @media (width >= 1024px) { font-size: 20px; line-height: 30px; }
+}
+
+/* ---------- Przycisk (cs-btn) ---------- */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 12px 24px;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+  & svg { width: 1.1em; height: 1.1em; flex: none; transition: transform 0.14s ease; }
+  &:hover { transform: translateY(-1px); }
+  &:hover svg { transform: translateX(3px); }
+  &:active { transform: translateY(1px); }
+}
+@utility btn-primary {
+  background: var(--red-strong);
+  color: var(--on-red);
+  &:hover { background: var(--red-hover); }
+}
+@utility btn-secondary {
+  background: var(--text);
+  color: var(--bg);
+  &:hover { background: var(--text-muted); }
+}
+@utility btn-outline {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+  &:hover { border-color: var(--text); }
+}
+
+/* Link z podkreśleniem rysowanym przy najechaniu. */
+@utility link-draw {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 2px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.25s var(--ease-out-quint), color 0.14s ease;
+  &:hover { background-size: 100% 2px; }
+}
+
+/* ---------- Grunge: tylko dwa akcenty ---------- */
+@utility trail {
+  display: block;
+  height: 6px;
+  background-image: linear-gradient(90deg, var(--red) 0 18px, transparent 18px 100%);
+  background-size: 32px 100%;
+  background-repeat: repeat-x;
+  transform: skewX(-12deg);
+}
+@utility grain {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.05;
+    mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Zdjęcie w ramce: przybliżenie 1.03 przy najechaniu na link. */
+@utility photo-zoom {
+  overflow: hidden;
+  & img { transition: transform 0.5s var(--ease-out-quint); }
+  a:hover & img, &:is(a):hover img { transform: scale(1.03); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

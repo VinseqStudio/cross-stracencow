@@ -1,0 +1,40 @@
+---
+import { schedule } from '../data/event';
+
+const days = [
+  { title: 'Sobota', note: 'biegi główne', rows: schedule.saturday },
+  { title: 'Niedziela', note: 'sztafety i dzieci', rows: schedule.sunday },
+];
+---
+
+<section id="program" class="section-pad bg-bg" aria-labelledby="program-title">
+  <div class="wrap grid gap-10 lg:gap-12">
+    <header class="grid max-w-[880px] gap-3">
+      <h2 id="program-title" class="display-lg">Dwa dni na torze</h2>
+      <p class="lead max-w-[56ch] text-muted">Godziny z XVI edycji. Program XVII edycji potwierdzimy w regulaminie.</p>
+    </header>
+
+    <div class="grid gap-10 md:grid-cols-2 md:gap-6">
+      {days.map((day) => (
+        <table class="w-full border-collapse">
+          <caption class="pb-3 text-left font-condensed text-2xl leading-[1.1] font-bold">
+            {day.title} <span class="font-semibold text-muted">{day.note}</span>
+          </caption>
+          <tbody>
+            {day.rows.map((r) => (
+              <tr class="border-t border-line last:border-b">
+                <th scope="row" class:list={['w-24 py-4 pr-3 text-left align-baseline font-display text-[26px] leading-none font-normal whitespace-nowrap tabular-nums', r.key ? 'text-accent' : 'text-muted']}>
+                  {r.time}
+                </th>
+                <td class="py-4 align-baseline text-base leading-6">
+                  <span class:list={[r.key ? 'font-condensed text-xl font-bold' : 'font-semibold']}>{r.what}</span>
+                  {r.sub && <span class="block text-muted">{r.sub}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ))}
+    </div>
+  </div>
+</section>

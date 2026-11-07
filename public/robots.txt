@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Opis strony dla agentów AI: https://crossstracencow.pl/llms.txt
+Sitemap: https://crossstracencow.pl/sitemap-index.xml

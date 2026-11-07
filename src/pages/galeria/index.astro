@@ -1,0 +1,106 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import { ArrowUpRight } from '@lucide/astro';
+import { db, Edition, asc } from 'astro:db';
+import Base from '../../layouts/Base.astro';
+import { photosOf, galleryYears } from '../../lib/photos';
+
+const editions = new Map((await db.select().from(Edition).orderBy(asc(Edition.year))).map((e) => [e.year, e]));
+const years = await Promise.all(
+  galleryYears.map(async (year) => ({
+    year,
+    edition: editions.get(year),
+    photos: await Promise.all(
+      photosOf(year).map(async ({ img }, i) => {
+        const full = await getImage({ src: img, width: Math.min(img.width, 1600), format: 'webp', quality: 82 });
+        return { img, full, alt: `Cross Straceńców ${year}, zdjęcie ${i + 1}` };
+      }),
+    ),
+  })),
+);
+const count = years.reduce((s, y) => s + y.photos.length, 0);
+---
+
+<Base
+  title="Galeria"
+  description={`Zdjęcia z ${years.length} edycji Crossu Straceńców w Głogowie, od 2016 do 2025 roku: rowy z wodą, błoto, meta i biegi dzieci.`}
+  current="galeria"
+>
+  <section class="bg-bg pt-12 pb-8 lg:pt-20 lg:pb-12" aria-labelledby="galeria-h1">
+    <div class="wrap grid gap-6">
+      <h1 id="galeria-h1" class="display-xl">Galeria</h1>
+      <p class="lead max-w-[56ch] text-muted">{count} zdjęć z {years.length} edycji. Dotknij zdjęcia, żeby je powiększyć.</p>
+    </div>
+  </section>
+
+  <nav aria-label="Lata" class="sticky top-16 z-40 border-y border-line bg-bg/95 backdrop-blur-sm lg:top-[72px]">
+    <ul class="wrap flex gap-2 overflow-x-auto py-3 [scrollbar-width:none]">
+      {years.map((y) => (
+        <li><a href={`#rok-${y.year}`} class="inline-flex min-h-11 items-center rounded-sm border border-line-strong px-4 font-condensed text-lg font-semibold tabular-nums hover:border-fg">{y.year}</a></li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="pswp-gallery bg-bg">
+    {years.map((y) => (
+      <section id={`rok-${y.year}`} class="scroll-mt-36 border-b border-line py-12 lg:py-16" aria-labelledby={`rok-${y.year}-h`}>
+        <div class="wrap grid gap-6">
+          <header class="flex flex-wrap items-baseline justify-between gap-4">
+            <h2 id={`rok-${y.year}-h`} class="display-lg">
+              {y.year} <span class="text-muted">{y.edition?.number} edycja</span>
+            </h2>
+            {y.edition?.galleryUrl && (
+              <a href={y.edition.galleryUrl} class="link-draw inline-flex min-h-11 items-center gap-1 font-semibold" rel="noopener">
+                Pełna galeria {y.year} <ArrowUpRight class="size-4" aria-hidden="true" stroke-linecap="square" />
+              </a>
+            )}
+          </header>
+          <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+            {y.photos.map((p) => (
+              <li>
+                <a
+                  href={p.full.src}
+                  data-pswp-width={p.full.attributes.width}
+                  data-pswp-height={p.full.attributes.height}
+                  class="photo-zoom block aspect-[3/2]"
+                  aria-label={`Powiększ: ${p.alt}`}
+                >
+                  <Picture
+                    src={p.img}
+                    alt={p.alt}
+                    widths={[300, 480, 640]}
+                    sizes="(min-width: 1024px) 310px, (min-width: 640px) 33vw, 50vw"
+                    formats={['avif', 'webp']}
+                    class="size-full object-cover"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ))}
+  </div>
+</Base>
+
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
+
+  // Każdy rok to osobny album: strzałki przechodzą tylko po zdjęciach z tej samej edycji.
+  document.querySelectorAll<HTMLElement>('.pswp-gallery section').forEach((section) => {
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: section,
+      children: 'a[data-pswp-width]',
+      pswpModule: () => import('photoswipe'),
+      bgOpacity: 0.94,
+      showHideAnimationType: 'zoom',
+      closeTitle: 'Zamknij',
+      zoomTitle: 'Powiększ',
+      arrowPrevTitle: 'Poprzednie',
+      arrowNextTitle: 'Następne',
+      errorMsg: 'Nie udało się wczytać zdjęcia.',
+    });
+    lightbox.init();
+  });
+</script>

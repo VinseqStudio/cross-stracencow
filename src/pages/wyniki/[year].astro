@@ -1,0 +1,125 @@
+---
+import { ArrowUpRight, Search } from '@lucide/astro';
+import { db, Edition, Result, eq, asc } from 'astro:db';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const years = await db.select({ year: Result.year }).from(Result).groupBy(Result.year);
+  return years.map(({ year }) => ({ params: { year: String(year) } }));
+}
+
+const year = Number(Astro.params.year);
+const [edition] = await db.select().from(Edition).where(eq(Edition.year, year));
+const rows = await db.select().from(Result).where(eq(Result.year, year)).orderBy(asc(Result.race), asc(Result.place));
+const km = (r: string) => Number(r.match(/(\d+)\s*km/)?.[1] ?? 0);
+const races = [...new Set(rows.map((r) => r.race))].sort((a, b) => km(b) - km(a) || a.localeCompare(b, 'pl'));
+const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const date = edition.date
+  ? new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(edition.date))
+  : null;
+
+const site = Astro.site!.href.replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `Wyniki ${edition.number} Crossu Straceńców ${year}`,
+  description: `Wyniki biegów ${races.join(', ')} na torze motocrossowym w Głogowie.`,
+  temporalCoverage: edition.date ?? String(year),
+  isBasedOn: edition.resultsUrl,
+  distribution: { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${site}/wyniki/${year}.json` },
+};
+---
+
+<Base
+  title={`Wyniki ${year}`}
+  description={`Wyniki ${edition.number} Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} sklasyfikowanych zawodników.`}
+  current="wyniki"
+  jsonLd={jsonLd}
+>
+  <section class="bg-bg pt-12 pb-8 lg:pt-20 lg:pb-10" aria-labelledby="rok-h1">
+    <div class="wrap grid gap-6">
+      <p class="eyebrow"><a href="/wyniki/" class="link-draw">Wyniki</a></p>
+      <h1 id="rok-h1" class="display-xl">{year}</h1>
+      <p class="lead max-w-[56ch] text-muted">
+        {edition.number} edycja{date ? `, ${date}` : ''}. {rows.length} osób na mecie.
+        Źródło: <a href={edition.resultsUrl!} rel="noopener" class="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-red">{edition.resultsLabel}<ArrowUpRight class="ml-0.5 inline size-4 align-[-2px]" aria-hidden="true" stroke-linecap="square" /></a>
+      </p>
+    </div>
+  </section>
+
+  <div class="sticky top-16 z-40 border-y border-line bg-bg/95 backdrop-blur-sm lg:top-[72px]">
+    <div class="wrap grid grid-cols-[minmax(0,1fr)] gap-3 py-3 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
+      <nav aria-label="Biegi" class="min-w-0">
+        <ul class="flex gap-2 overflow-x-auto [scrollbar-width:none]">
+          {races.map((r) => (
+            <li class="shrink-0"><a href={`#${slug(r)}`} class="inline-flex min-h-11 items-center rounded-sm border border-line-strong px-4 font-condensed text-[17px] font-semibold whitespace-nowrap hover:border-fg">{r}</a></li>
+          ))}
+        </ul>
+      </nav>
+      <label class="relative block">
+        <span class="sr-only">Szukaj zawodnika, miasta lub klubu</span>
+        <Search class="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted" aria-hidden="true" stroke-linecap="square" />
+        <input
+          type="search"
+          data-filter
+          placeholder="Szukaj nazwiska, miasta, klubu"
+          class="min-h-12 w-full rounded-sm border-[1.5px] border-line-strong bg-raised py-3 pr-4 pl-10 text-[17px] placeholder:text-muted hover:border-muted focus:border-fg"
+        />
+      </label>
+    </div>
+  </div>
+
+  <div class="bg-bg pb-16 lg:pb-24">
+    {races.map((race) => {
+      const list = rows.filter((r) => r.race === race);
+      return (
+        <section id={slug(race)} class="race scroll-mt-44 pt-12" aria-labelledby={`${slug(race)}-h`}>
+          <div class="wrap grid gap-4">
+            <h2 id={`${slug(race)}-h`} class="font-display text-[clamp(32px,4vw,44px)] leading-none uppercase">
+              {race} <span class="text-muted">{list.length}</span>
+            </h2>
+            <table class="w-full border-collapse text-[15px] leading-[22px]">
+              <thead class="sr-only sm:not-sr-only">
+                <tr class="text-left text-muted">
+                  <th scope="col" class="w-16 py-2 pr-3 font-semibold">Miejsce</th>
+                  <th scope="col" class="py-2 font-semibold">Zawodnik</th>
+                  <th scope="col" class="hidden py-2 font-semibold md:table-cell">Miejscowość</th>
+                  <th scope="col" class="hidden py-2 font-semibold lg:table-cell">Klub</th>
+                  <th scope="col" class="hidden w-16 py-2 font-semibold sm:table-cell">Kat.</th>
+                  <th scope="col" class="w-24 py-2 text-right font-semibold">Czas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((r) => (
+                  <tr class="border-t border-line" data-row={`${r.name} ${r.city ?? ''} ${r.club ?? ''}`.toLowerCase()}>
+                    <td class:list={['py-3 pr-3 font-display text-xl leading-none tabular-nums', r.place <= 3 ? 'text-accent' : 'text-muted']}>{r.place}</td>
+                    <td class="py-3 pr-3">
+                      <span class="font-semibold">{r.name}</span>
+                      <span class="block text-sm text-muted lg:hidden">{[r.city, r.club].filter(Boolean).join(', ')}</span>
+                    </td>
+                    <td class="hidden py-3 pr-3 md:table-cell">{r.city}</td>
+                    <td class="hidden py-3 pr-3 text-muted lg:table-cell">{r.club}</td>
+                    <td class="hidden py-3 text-muted sm:table-cell">{r.category}</td>
+                    <td class="py-3 text-right font-condensed text-lg font-bold tabular-nums">{r.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p class="empty hidden py-4 text-muted">Brak wyników dla tego wyszukiwania w tym biegu.</p>
+          </div>
+        </section>
+      );
+    })}
+  </div>
+</Base>
+
+<script>
+  const input = document.querySelector<HTMLInputElement>('[data-filter]');
+  const rows = [...document.querySelectorAll<HTMLElement>('[data-row]')];
+  const races = [...document.querySelectorAll<HTMLElement>('.race')];
+  input?.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    rows.forEach((r) => (r.hidden = !!q && !r.dataset.row!.includes(q)));
+    races.forEach((s) => s.querySelector('.empty')!.classList.toggle('hidden', !q || !!s.querySelector('[data-row]:not([hidden])')));
+  });
+</script>

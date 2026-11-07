@@ -1,0 +1,131 @@
+---
+// Moment „photo-chapters”: trasa opowiedziana w czterech zdjęciach.
+// Sekcja trzyma się ekranu, a każde kolejne zdjęcie odsłania się od dołu na poprzednim.
+// Bez JS, przy ograniczonym ruchu i na niskich ekranach: zwykła lista rozdziałów.
+import { Picture } from 'astro:assets';
+import { chapters } from '../data/event';
+import { photo } from '../lib/photos';
+const n = chapters.length;
+---
+
+<section id="trasa" class="route bg-surface" style={`--n:${n}`} aria-labelledby="trasa-title">
+  <div class="route-sticky">
+    <header class="wrap grid gap-3 pt-16 pb-8 lg:pt-24 lg:pb-10">
+      <h2 id="trasa-title" class="display-lg">Pięć kilometrów prawdziwego terenu</h2>
+      <p class="lead max-w-[56ch] text-muted">Tak wygląda jedna pętla. Na 10 km pokonujesz ją dwa razy.</p>
+    </header>
+
+    <ol class="route-stage wrap" role="list">
+      {chapters.map((c, i) => (
+        <li class="route-chapter" data-i={i}>
+          <div class="route-frame">
+            <Picture
+              src={photo(c.photo)}
+              alt={c.alt}
+              widths={[480, 800, 1200, 1350]}
+              sizes="(min-width: 1304px) 1240px, 100vw"
+              formats={['avif', 'webp']}
+              class="size-full object-cover"
+            />
+          </div>
+          <div class="route-panel">
+            <span class="font-display text-[28px] leading-none text-accent tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="mt-2 font-condensed text-2xl leading-[1.15] font-bold">{c.title}</h3>
+            <p class="mt-1 text-base leading-6">{c.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  /* Układ statyczny (domyślny): rozdziały jeden pod drugim. */
+  .route { padding-bottom: 64px; }
+  .route-stage { display: grid; gap: 40px; }
+  .route-frame { aspect-ratio: 4 / 3; overflow: hidden; }
+  .route-panel { padding-top: 16px; max-width: 46ch; }
+  @media (min-width: 768px) {
+    .route-stage { grid-template-columns: 1fr 1fr; gap: 48px 24px; }
+  }
+  @media (min-width: 1024px) { .route { padding-bottom: 96px; } }
+
+  /* Układ na żywo: włącza go skrypt (JS, ruch dozwolony, ekran od 600px wysokości). */
+  .route.is-live { height: calc(var(--n) * 75svh + 100svh); padding-bottom: 0; }
+  .route.is-live .route-sticky {
+    position: sticky;
+    top: 64px;
+    height: calc(100svh - 64px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .route.is-live .route-stage {
+    position: relative;
+    display: block;
+    flex: 1;
+    margin-bottom: 24px;
+    min-height: 0;
+  }
+  .route.is-live .route-chapter { position: absolute; inset: 0 var(--gutter); }
+  .route.is-live .route-frame { position: absolute; inset: 0; aspect-ratio: auto; will-change: clip-path; }
+  .route.is-live .route-frame :global(img) { will-change: transform; transform-origin: 50% 100%; }
+  .route.is-live .route-chapter:not(:first-child) .route-frame { clip-path: inset(100% 0 0 0); }
+  .route.is-live .route-panel {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: 420px;
+    padding: 20px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .route.is-live .route-chapter.is-active .route-panel { opacity: 1; transform: none; }
+  @media (min-width: 768px) {
+    .route.is-live .route-panel { left: 24px; bottom: 24px; right: auto; padding: 24px; }
+  }
+  @media (min-width: 1024px) {
+    .route.is-live .route-sticky { top: 72px; height: calc(100svh - 72px); }
+    .route.is-live .route-stage { margin-bottom: 40px; }
+  }
+</style>
+
+<script>
+  import { scroll } from 'motion';
+
+  const section = document.querySelector<HTMLElement>('.route');
+  const live = () => !matchMedia('(prefers-reduced-motion: reduce)').matches && innerHeight >= 600;
+
+  if (section && live()) {
+    section.classList.add('is-live');
+    const items = [...section.querySelectorAll<HTMLElement>('.route-chapter')];
+    const frames = items.map((li) => li.querySelector<HTMLElement>('.route-frame')!);
+    const imgs = items.map((li) => li.querySelector<HTMLElement>('img')!);
+    const n = items.length;
+    let active = -1;
+    const clamp = (v: number) => Math.min(1, Math.max(0, v));
+
+    const render = (p: number) => {
+      const t = p * (n - 1);
+      let now = 0;
+      for (let k = 1; k < n; k++) {
+        // Każde przejście zajmuje środkową połowę swojego odcinka, reszta to postój na zdjęciu.
+        const w = clamp((t - (k - 1) - 0.25) / 0.5);
+        const e = 1 - Math.pow(1 - w, 3);
+        frames[k].style.clipPath = `inset(${((1 - e) * 100).toFixed(2)}% 0 0 0)`;
+        imgs[k].style.transform = `scale(${(1.08 - 0.08 * e).toFixed(4)})`;
+        if (w > 0.5) now = k;
+      }
+      if (now !== active) {
+        items.forEach((li, i) => li.classList.toggle('is-active', i === now));
+        active = now;
+      }
+    };
+    render(0);
+    scroll(render, { target: section, offset: ['start start', 'end end'] });
+  }
+</script>

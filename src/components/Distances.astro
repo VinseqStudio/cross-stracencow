@@ -1,0 +1,79 @@
+---
+import { Picture } from 'astro:assets';
+import { Info } from '@lucide/astro';
+import { distances } from '../data/event';
+import { photo } from '../lib/photos';
+
+const levels = ['Na start', 'Spokojnie', 'Wymagająco', 'Twardo', 'Straceńczo'];
+const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copper: 'var(--medal-copper)' };
+---
+
+<section id="dystanse" class="section-pad bg-bg" aria-labelledby="dystanse-title">
+  <div class="wrap grid gap-10 lg:gap-12">
+    <header class="grid max-w-[880px] gap-3">
+      <h2 id="dystanse-title" class="display-lg">Wybierz swoje wyzwanie</h2>
+      <p class="lead max-w-[56ch] text-muted">
+        Pięć kilometrów, dziesięć albo sztafeta z przyjaciółmi. Na mecie każdy dostaje medal Finisher.
+      </p>
+    </header>
+
+    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      {distances.map((d) => (
+        <article
+          id={`dystans-${d.id}`}
+          class:list={['relative flex flex-col rounded-sm bg-raised', d.first ? 'border-2 border-fg' : 'border border-line']}
+          style={`--tier:${tierVar[d.tier]}`}
+        >
+          {d.first && (
+            <span class="absolute top-0 right-5 z-10 -translate-y-1/2 rounded-sm bg-red-strong px-2 py-[5px] font-condensed text-[13px] leading-none font-bold tracking-[0.06em] text-on-red uppercase">
+              Na pierwszy raz
+            </span>
+          )}
+          <div class="aspect-[4/3] overflow-hidden">
+            <Picture
+              src={photo(d.photo)}
+              alt={d.alt}
+              widths={[360, 560, 720]}
+              sizes="(min-width: 1280px) 300px, (min-width: 640px) 50vw, 100vw"
+              formats={['avif', 'webp']}
+              class="size-full object-cover"
+            />
+          </div>
+          <div class="flex flex-1 flex-col gap-4 p-5 lg:p-6">
+            <div class="grid gap-1">
+              <h3 class="inline-flex items-center gap-2 font-condensed text-[15px] font-bold tracking-[0.06em] text-muted uppercase">
+                <i class="size-2.5 rounded-full bg-(--tier)" aria-hidden="true"></i>{d.name}
+              </h3>
+              <p class="font-display text-[clamp(44px,4.4vw,56px)] leading-[0.95] uppercase">{d.distance}</p>
+            </div>
+            <span class="inline-flex items-center gap-2" role="img" aria-label={`Trudność ${d.difficulty} na 5: ${levels[d.difficulty - 1]}`}>
+              <span class="inline-flex gap-[3px]" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <span class:list={['h-1.5 w-3.5', i <= d.difficulty ? (d.difficulty >= 4 ? 'bg-red' : 'bg-fg') : 'bg-sunken']}></span>
+                ))}
+              </span>
+              <span class="text-[15px] font-semibold" aria-hidden="true">{levels[d.difficulty - 1]}</span>
+            </span>
+            <p class="text-base leading-6">{d.description}</p>
+            <ul class="mt-auto grid border-t border-line text-[15px] leading-[22px]">
+              {d.facts.map((f) => (
+                <li class="flex justify-between gap-3 border-b border-line py-2.5">
+                  <span class="text-muted">{f.label}</span><span class="text-right font-semibold">{f.value}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="flex items-baseline gap-2">
+              <b class="font-display text-[40px] leading-none font-normal tabular-nums">{d.price}</b>
+              <span class="text-[15px] text-muted">{d.priceNote}</span>
+            </p>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <p class="flex items-start gap-3 rounded-sm bg-sand p-4 text-[15px] leading-[22px]" role="note">
+      <Info class="size-[22px] shrink-0" aria-hidden="true" stroke-linecap="square" />
+      <span><strong class="block text-base">Ceny, limity i godziny z XVI edycji</strong>Zapisy na XVII edycję ruszą po publikacji regulaminu.</span>
+    </p>
+  </div>
+</section>
