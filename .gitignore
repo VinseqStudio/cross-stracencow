@@ -7,3 +7,5 @@ photos-src/
 .taste-skill/
 shots/
 *.db
+.vercel
+.env*
