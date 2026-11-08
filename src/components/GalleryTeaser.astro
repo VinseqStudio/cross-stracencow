@@ -1,30 +1,29 @@
 ---
+// Zapowiedź galerii na stronie głównej: kolaż pięciu zdjęć z ostatniej edycji i link do /galeria/.
 import { Picture } from 'astro:assets';
 import { ArrowRight } from '@lucide/astro';
 import SectionHead from './SectionHead.astro';
 import { photo } from '../lib/photos';
-import { editions } from '../../db/data/editions';
 
-// Mozaika z różnych lat. Każde zdjęcie prowadzi do swojego roku w galerii.
+// Zdjęcia z ostatniej edycji. Wszystkie lata są w galerii.
 const tiles = [
-  { rel: '2025/2025-07.jpg', year: 2025, alt: 'Zawodnik czołga się przez błotnistą kałużę', cls: 'col-span-2 row-span-2' },
-  { rel: '2023/2023-07.jpg', year: 2023, alt: 'Czterech biegaczy z uniesionymi rękami na tle toru', cls: '' },
-  { rel: '2024/2024-12.jpg', year: 2024, alt: 'Mama i mała córka z medalem na szyi siedzą na trawie', cls: '' },
-  { rel: '2019/2019-08.jpg', year: 2019, alt: 'Zawodniczki pomagają sobie nawzajem w błocie', cls: '' },
-  { rel: '2022/2022-04.jpg', year: 2022, alt: 'Zawodniczka z numerem 76 rozbryzguje wodę w rowie', cls: '' },
+  { rel: '2025/2025-07.jpg', alt: 'Zawodnik czołga się przez błotnistą kałużę', cls: 'col-span-2 row-span-2' },
+  { rel: '2025/2025-05.jpg', alt: 'Zawodnicy wspinają się po błotnistym zboczu z czerwoną plandeką', cls: '' },
+  { rel: '2025/2025-08.jpg', alt: 'Zawodnik wbiega na ostatnią prostą między banerami do mety', cls: '' },
+  { rel: '2025/2025-12.jpg', alt: 'Zawodniczka w okularach przeciwsłonecznych odpoczywa przy bramie mety', cls: '' },
+  { rel: '2025/2025-14.jpg', alt: 'Zawodniczka unosi ręce przed ścianką z napisem Jedyny taki bieg w Polsce', cls: '' },
 ];
-const years = [...editions].reverse();
 ---
 
-<section id="galeria" class="section-pad bg-surface" aria-labelledby="galeria-title">
+<section id="galeria" class="defer-render section-pad bg-surface" aria-labelledby="galeria-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <SectionHead id="galeria-title" title={`${editions.length} edycji w błocie`} lead="Od 2011 roku na torze w Górkowie. W kwietniu dopiszemy siedemnastą.">
-      <a href="/galeria/" class="btn btn-outline">Otwórz galerię <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
+    <SectionHead id="galeria-title" title="Błoto, woda i meta" lead="Tak było na torze w ostatnim sezonie. Zdjęcia z wcześniejszych lat czekają w galerii.">
+      <a href="/galeria/" class="btn btn-outline w-full sm:w-auto">Zobacz galerię zdjęć <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
     </SectionHead>
 
     <div class="grid auto-rows-[1fr] grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       {tiles.map((t) => (
-        <a href={`/galeria/#rok-${t.year}`} class:list={['photo-zoom block aspect-[4/3] h-full w-full', t.cls]} aria-label={`Galeria ${t.year}: ${t.alt}`}>
+        <a href="/galeria/" class:list={['photo-zoom block aspect-[4/3] h-full w-full', t.cls]} aria-label={`Galeria: ${t.alt}`}>
           <Picture
             src={photo(t.rel)}
             alt=""
@@ -36,18 +35,5 @@ const years = [...editions].reverse();
         </a>
       ))}
     </div>
-
-    <nav aria-label="Galeria według roku">
-      <ul class="grid grid-cols-4 gap-2 sm:grid-cols-8">
-        {years.map((e) => (
-          <li>
-            <a href={`/galeria/#rok-${e.year}`} class="grid min-h-14 place-items-center rounded-sm border border-line-strong bg-bg px-2 transition-colors hover:border-fg hover:bg-fg hover:text-bg">
-              <span class="font-condensed text-lg leading-none font-bold tabular-nums">{e.year}</span>
-              <span class="text-[12px] leading-4 text-muted">{e.number}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
   </div>
 </section>

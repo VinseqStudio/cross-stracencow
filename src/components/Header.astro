@@ -1,5 +1,8 @@
 ---
-import { Menu, X } from '@lucide/astro';
+// Górny pasek: logo, nawigacja (od 1024 px), przycisk zapisu. Na telefonie menu pełnoekranowe
+// z „Zapisz się na start”, „Kontakt z biurem” i danymi biura.
+import { Menu, X, ArrowUpRight } from '@lucide/astro';
+import { event } from '../data/event';
 
 interface Props { current?: string }
 const { current } = Astro.props;
@@ -31,6 +34,8 @@ const links = [
         ))}
       </ul>
     </nav>
+    <div class="flex items-center gap-2 lg:gap-0">
+    <a href={event.registration.url} target="_blank" rel="noopener" class="btn btn-primary hidden min-h-11 px-5 text-[15px] sm:inline-flex">Zapisz się <ArrowUpRight aria-hidden="true" stroke-linecap="square" /></a>
     <button
       type="button"
       class="menu-toggle -mr-2 grid size-11 place-items-center lg:hidden"
@@ -41,35 +46,78 @@ const links = [
       <Menu class="icon-open size-7" stroke-width={2} stroke-linecap="square" aria-hidden="true" />
       <X class="icon-close hidden size-7" stroke-width={2} stroke-linecap="square" aria-hidden="true" />
     </button>
+    </div>
   </div>
-  <nav id="menu-mobile" aria-label="Menu" class="menu-panel fixed inset-x-0 top-16 bottom-0 hidden overflow-y-auto bg-bg lg:hidden">
-    <ul class="wrap grid pt-2 pb-8">
-      {links.map((l) => (
-        <li class="border-b border-line">
-          <a href={l.href} class="block py-4 font-display text-[40px] leading-none uppercase">{l.label}</a>
+  <nav id="menu-mobile" aria-label="Menu" class="menu-panel fixed inset-x-0 top-16 bottom-0 hidden flex-col overflow-y-auto bg-bg lg:hidden">
+    <ul class="wrap grid pt-2">
+      {links.map((l, i) => (
+        <li class="menu-item border-b border-line">
+          <a href={l.href} class="flex items-baseline justify-between py-4 font-display text-[44px] leading-none uppercase">
+            {l.label}<span class="font-condensed text-[15px] font-bold text-muted tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+          </a>
         </li>
       ))}
     </ul>
+    <div class="menu-item wrap grid gap-3 pt-6">
+      <a href={event.registration.url} target="_blank" rel="noopener" class="btn btn-primary min-h-14 w-full">Zapisz się na start <ArrowUpRight aria-hidden="true" stroke-linecap="square" /></a>
+      <a href="/#kontakt" class="btn btn-outline min-h-14 w-full">Kontakt z biurem</a>
+    </div>
+    <div class="menu-item wrap mt-auto grid gap-1 pt-10 pb-8">
+      <span class="trail mb-4 w-24"></span>
+      <span class="font-condensed text-xl font-bold">{event.dates.label}</span>
+      <span class="text-muted">{event.venue.name}, {event.venue.city}</span>
+      <a href={`tel:+48${event.organizer.phone.replace(/\s/g, '')}`} class="mt-2 inline-flex min-h-11 items-center font-semibold tabular-nums underline decoration-line-strong underline-offset-4">tel. {event.organizer.phone}</a>
+      <a href={`mailto:${event.organizer.email}`} class="inline-flex min-h-11 items-center font-semibold underline decoration-line-strong underline-offset-4">{event.organizer.email}</a>
+    </div>
   </nav>
 </header>
 
 <style>
-  .site-header[data-open='true'] .menu-panel { display: block; }
+  .site-header[data-open='true'] .menu-panel { display: flex; }
   .site-header[data-open='true'] .icon-open { display: none; }
   .site-header[data-open='true'] .icon-close { display: block; }
 </style>
 
 <script>
+  // Menu na telefonie rozwija się od góry, a pozycje wjeżdżają po kolei (Web Animations API, bez bibliotek).
   const header = document.querySelector<HTMLElement>('.site-header')!;
   const toggle = header.querySelector<HTMLButtonElement>('.menu-toggle')!;
-  const set = (open: boolean) => {
-    header.dataset.open = String(open);
+  const panel = header.querySelector<HTMLElement>('.menu-panel')!;
+  const items = panel.querySelectorAll<HTMLElement>('.menu-item');
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+  const set = async (open: boolean) => {
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Zamknij menu' : 'Otwórz menu');
     document.documentElement.style.overflow = open ? 'hidden' : '';
+    if (open) {
+      header.dataset.open = 'true';
+      if (reduce()) return;
+      panel.animate({ clipPath: ['inset(0 0 100% 0)', 'inset(0 0 0% 0)'] }, { duration: 450, easing: ease });
+      items.forEach((el, i) =>
+        el.animate({ opacity: [0, 1], transform: ['translateY(24px)', 'translateY(0)'] }, { duration: 450, delay: 120 + i * 50, easing: ease, fill: 'backwards' }),
+      );
+    } else {
+      if (!reduce()) await panel.animate({ clipPath: ['inset(0 0 0% 0)', 'inset(0 0 100% 0)'] }, { duration: 300, easing: ease, fill: 'forwards' }).finished;
+      header.dataset.open = 'false';
+      panel.getAnimations().forEach((a) => a.cancel());
+    }
   };
   toggle.addEventListener('click', () => set(header.dataset.open !== 'true'));
-  header.querySelectorAll('.menu-panel a').forEach((a) => a.addEventListener('click', () => set(false)));
+  panel.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => set(false)));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && header.dataset.open === 'true') { set(false); toggle.focus(); } });
   matchMedia('(min-width: 1024px)').addEventListener('change', (m) => m.matches && set(false));
+
+  // Wejście na stronę z kotwicą (np. /#program z galerii): sekcje niżej rysują się dopiero przy zbliżeniu
+  // (content-visibility), więc po wczytaniu jeszcze raz ustawiamy cel pod nagłówkiem. Nie, jeśli ktoś już przewija.
+  if (location.hash.length > 1) {
+    let touched = false;
+    const stop = () => (touched = true);
+    ['wheel', 'touchstart', 'keydown'].forEach((t) => addEventListener(t, stop, { once: true, passive: true }));
+    addEventListener('load', () => {
+      const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (target && !touched) requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
+    }, { once: true });
+  }
 </script>

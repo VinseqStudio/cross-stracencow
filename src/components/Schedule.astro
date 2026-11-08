@@ -1,20 +1,44 @@
 ---
+// Program „Dwa dni na torze”: kartki z kalendarza (klik przewija do danego dnia) i tabele godzin.
+// Dane: `schedule` w src/data/event.ts.
 import SectionHead from './SectionHead.astro';
-import { schedule } from '../data/event';
+import { schedule, event } from '../data/event';
+
+// Kartki z kalendarza obok nagłówka: dzień tygodnia, numer i miesiąc obu dni zawodów.
+const tz = 'Europe/Warsaw';
+const part = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('pl-PL', { timeZone: tz, ...o }).format(new Date(iso));
+const cal = [event.dates.start, event.dates.end].map((iso) => ({
+  wd: part(iso, { weekday: 'short' }).replace('.', ''),
+  day: part(iso, { day: 'numeric' }),
+  month: new Intl.DateTimeFormat('pl-PL', { timeZone: tz, day: 'numeric', month: 'long' }).formatToParts(new Date(iso)).find((p) => p.type === 'month')!.value,
+}));
 
 const days = [
-  { title: 'Sobota', note: 'biegi główne', rows: schedule.saturday },
-  { title: 'Niedziela', note: 'sztafety i dzieci', rows: schedule.sunday },
+  { id: 'dzien-sobota', title: 'Sobota', note: 'biegi główne', rows: schedule.saturday },
+  { id: 'dzien-niedziela', title: 'Niedziela', note: 'sztafety i dzieci', rows: schedule.sunday },
 ];
 ---
 
-<section id="program" class="section-pad bg-bg" aria-labelledby="program-title">
+<section id="program" class="defer-render section-pad bg-bg" aria-labelledby="program-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <SectionHead id="program-title" title="Dwa dni na torze" lead="Sobota należy do biegów głównych, niedziela do sztafet i dzieci. Biuro zawodów działa w namiocie przy torze." />
+    <SectionHead id="program-title" title="Dwa dni na torze" lead="Sobota należy do biegów głównych, niedziela do sztafet i dzieci. Biuro zawodów działa w namiocie przy torze.">
+      <ul class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto" aria-label={`Termin: ${event.dates.label}`}>
+        {cal.map((c, i) => (
+          <li class="sm:w-[104px]">
+            <a href={`#${days[i].id}`} class="cal day-link grid overflow-hidden rounded-sm border border-line-strong text-center transition-[transform,border-color] hover:-translate-y-0.5 hover:border-fg">
+              <span class="sr-only">Program na </span>
+              <span class="bg-red-strong py-1.5 font-condensed text-[14px] leading-none font-bold tracking-[0.08em] text-on-red uppercase">{c.wd}</span>
+              <span class="pt-3 font-display text-[56px] leading-none tabular-nums sm:pt-2 sm:text-[48px]">{c.day}</span>
+              <span class="pb-2.5 font-condensed text-[15px] font-semibold text-muted">{c.month}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </SectionHead>
 
     <div class="grid gap-10 md:grid-cols-2 md:gap-6">
       {days.map((day) => (
-        <table class="w-full border-collapse">
+        <table id={day.id} class="day-table w-full border-collapse">
           <caption class="pb-3 text-left font-condensed text-2xl leading-[1.1] font-bold">
             {day.title} <span class="font-semibold text-muted">{day.note}</span>
           </caption>
@@ -36,3 +60,19 @@ const days = [
     </div>
   </div>
 </section>
+
+<script>
+  // Kartka z kalendarza przewija do programu danego dnia i na chwilę go podświetla.
+  // Na telefonie dni są jeden pod drugim, więc szybko przeskakujesz między sobotą a niedzielą.
+  document.querySelectorAll<HTMLAnchorElement>('.day-link').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const target = document.querySelector<HTMLElement>(a.hash);
+      if (!target) return;
+      e.preventDefault();
+      const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+      history.replaceState(null, '', a.hash);
+      if (!calm) target.animate({ backgroundColor: ['rgba(234, 29, 40, 0.1)', 'rgba(234, 29, 40, 0)'] }, { duration: 1600, delay: 400, fill: 'backwards' });
+    });
+  });
+</script>

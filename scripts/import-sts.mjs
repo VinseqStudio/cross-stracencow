@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const OUT = path.resolve('db/data/results');
 const jobs = process.argv.slice(2).length ? process.argv.slice(2) : ['2023:cross2023', '2022:cross2022'];
-const title = (s) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const title = (s) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_m, a, b) => a + b.toUpperCase());
 const strip = (s) => s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 
 async function get(url) {

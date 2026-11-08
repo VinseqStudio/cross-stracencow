@@ -1,66 +1,67 @@
 ---
+// Stopka: ostatnie zaproszenie na start, nawigacja, biuro zawodów i karta „Miejsce startu” z linkiem do Map Google.
+import { Picture } from 'astro:assets';
+import { ArrowUp, ArrowUpRight, MapPin } from '@lucide/astro';
 import TornEdge from './TornEdge.astro';
-import { event, partners } from '../data/event';
+import { photo } from '../lib/photos';
+import { event } from '../data/event';
 
 const { edgeFrom = 'var(--bg)' } = Astro.props as { edgeFrom?: string };
 
 const columns = [
-  { title: 'Bieg', links: [{ label: 'Dystanse', href: '/#dystanse' }, { label: 'Trasa', href: '/#trasa' }, { label: 'Program', href: '/#program' }, { label: 'Pytania', href: '/#faq' }] },
-  { title: 'Archiwum', links: [{ label: 'Galeria', href: '/galeria/' }, { label: 'Wyniki', href: '/wyniki/' }, { label: 'Historia', href: '/#historia' }] },
-  { title: 'Kontakt', links: [{ label: event.organizer.email, href: `mailto:${event.organizer.email}` }, { label: 'Facebook', href: event.facebook }] },
+  { title: 'Bieg', links: [{ label: 'Dystanse', href: '/#dystanse' }, { label: 'Trasa', href: '/#trasa' }, { label: 'Ściana Płaczu', href: '/#sciana' }, { label: 'Program', href: '/#program' }, { label: 'Pytania', href: '/#faq' }] },
+  { title: 'Archiwum', links: [{ label: 'Galeria', href: '/galeria/' }, { label: 'Wyniki', href: '/wyniki/' }, { label: 'Historia', href: '/#historia' }, { label: 'Facebook', href: event.facebook }] },
 ];
+// Dojazd: wyszukiwanie toru w Mapach Google (bez współrzędnych, sama nazwa miejsca).
+const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${event.venue.name}, ${event.venue.city}`)}`;
 ---
 
 <TornEdge from={edgeFrom} to="#121211" seed={11} />
-<footer id="kontakt" class="grain bg-bg pb-8 text-fg" data-theme="dark">
-  <div class="partners border-b border-line py-6 lg:py-8" aria-labelledby="partnerzy-h">
-    <h2 id="partnerzy-h" class="sr-only">Organizatorzy i partnerzy</h2>
-    <div class="marquee flex overflow-hidden">
-      {[0, 1].map((copy) => (
-        <ul class="marquee-track flex shrink-0 items-center" aria-hidden={copy === 1 ? 'true' : undefined}>
-          {partners.map((p) => (
-            <li class="flex shrink-0 items-center font-condensed text-[22px] leading-none font-bold whitespace-nowrap text-muted lg:text-[28px]">
-              {p}<span class="trail mx-8 w-10 lg:mx-10" aria-hidden="true"></span>
-            </li>
-          ))}
-        </ul>
-      ))}
-    </div>
-  </div>
-
-  <div class="wrap grid gap-12 pt-14 lg:pt-20">
-    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]">
-      <div class="grid content-start justify-items-start gap-5 sm:col-span-2 lg:col-span-1">
-        <img src="/logo-inverse.webp" alt="Cross Straceńców Głogów" width="125" height="88" loading="lazy" class="h-22 w-auto" />
-        <p class="max-w-[14ch] font-display text-[32px] leading-none uppercase">Przyjdź taki, jaki jesteś. Wyjdziesz silniejszy.</p>
+<footer id="stopka" class="grain bg-bg pb-6 text-fg" data-theme="dark">
+  <div class="wrap relative z-[1] grid gap-12 pt-14 lg:gap-16 lg:pt-20">
+    {/* Ostatnie zaproszenie: data, miejsce i zapis. */}
+    <div class="grid gap-6 border-b border-line pb-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10 lg:pb-16">
+      <div class="grid gap-4">
+        <img src="/logo-inverse.webp" alt="Cross Straceńców Głogów" width="125" height="88" loading="lazy" class="h-16 w-auto lg:h-20" />
+        <p class="font-display text-[clamp(44px,7vw,96px)] leading-[0.9] uppercase">Do zobaczenia <span class="text-red">na torze.</span></p>
+        <p class="font-condensed text-[20px] font-semibold text-fg/85">{event.dates.label}, {event.venue.name}, {event.venue.city}</p>
       </div>
+      <a href={event.registration.url} target="_blank" rel="noopener" class="btn btn-primary min-h-14 w-full px-8 sm:w-auto">Zapisz się na start <ArrowUpRight aria-hidden="true" stroke-linecap="square" /></a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-[1fr_1fr_1.4fr_2fr] lg:gap-10">
       {columns.map((c) => (
-        <div>
-          <h3 class="mb-3 font-condensed text-[15px] font-bold tracking-[0.06em] text-muted uppercase">{c.title}</h3>
-          <ul class="grid gap-1">
+        <nav aria-label={c.title}>
+          <h2 class="mb-2 font-condensed text-[15px] font-bold tracking-[0.06em] text-muted uppercase">{c.title}</h2>
+          <ul class="grid">
             {c.links.map((l) => (
-              <li><a href={l.href} class="link-draw inline-flex min-h-11 items-center break-all">{l.label}</a></li>
+              <li><a href={l.href} class="link-draw inline-flex min-h-11 items-center text-[17px]">{l.label}</a></li>
             ))}
           </ul>
-        </div>
+        </nav>
       ))}
+      <div class="col-span-2 grid content-start justify-items-start lg:col-span-1">
+        <h2 class="mb-2 font-condensed text-[15px] font-bold tracking-[0.06em] text-muted uppercase">Biuro zawodów</h2>
+        <a href={`mailto:${event.organizer.email}`} class="link-draw inline-flex min-h-11 items-center text-[19px] font-semibold break-all">{event.organizer.email}</a>
+        <a href={`tel:+48${event.organizer.phone.replace(/\s/g, '')}`} class="link-draw inline-flex min-h-11 items-center text-[19px] font-semibold tabular-nums">{event.organizer.phone}</a>
+        <p class="mt-1 text-[15px] leading-[22px] text-muted">{event.organizer.phoneHours}<br />{event.organizer.name}, {event.organizer.address}<br />NIP {event.organizer.nip}</p>
+      </div>
+      {/* Miejsce startu: zdjęcie trasy i link do nawigacji na tor. */}
+      <a href={maps} target="_blank" rel="noopener" class="venue group relative isolate col-span-2 grid min-h-[200px] content-end overflow-hidden rounded-sm p-5 lg:col-span-1">
+        <Picture src={photo('2022/2022-03.jpg')} alt="" widths={[400, 700]} sizes="(min-width: 1024px) 420px, 100vw" formats={['avif', 'webp']} loading="lazy" class="absolute inset-0 -z-20 size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]" />
+        <span class="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgba(18,18,17,0.92)_0%,rgba(18,18,17,0.35)_70%)]"></span>
+        <span class="font-condensed text-[15px] font-bold tracking-[0.06em] text-accent uppercase">Miejsce startu</span>
+        <span class="mt-1 font-display text-[32px] leading-[0.95] uppercase">{event.venue.name}</span>
+        <span class="mt-3 flex items-center justify-between gap-3">
+          <span class="text-[15px] text-fg/85">{event.venue.city}, start i meta przy torze</span>
+          <span class="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-sm bg-fg px-4 font-condensed text-[16px] font-bold text-bg transition-colors group-hover:bg-red-strong group-hover:text-on-red"><MapPin class="size-4" aria-hidden="true" stroke-linecap="square" />Jak dojechać<span class="sr-only"> (Mapy Google)</span></span>
+        </span>
+      </a>
     </div>
 
-    <div class="flex flex-wrap justify-between gap-3 border-t border-line pt-5 text-sm text-muted">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-sm text-muted">
       <span>© {new Date().getFullYear()} {event.organizer.name}</span>
-      <span>{event.venue.name}, {event.venue.city}</span>
+      <a href="#top" class="link-draw inline-flex min-h-11 items-center gap-2 font-semibold text-fg">Do góry <ArrowUp class="size-4" aria-hidden="true" stroke-linecap="square" /></a>
     </div>
   </div>
 </footer>
-
-<style>
-  /* Pasek partnerów przewija się bez końca; zatrzymuje się po najechaniu i przy ograniczonym ruchu. */
-  .marquee-track { animation: marquee 48s linear infinite; }
-  .marquee:hover .marquee-track { animation-play-state: paused; }
-  @keyframes marquee { to { transform: translateX(-100%); } }
-  @media (prefers-reduced-motion: reduce) {
-    .marquee { flex-wrap: wrap; justify-content: center; }
-    .marquee-track { animation: none; flex-wrap: wrap; justify-content: center; row-gap: 12px; }
-    .marquee-track[aria-hidden] { display: none; }
-  }
-</style>

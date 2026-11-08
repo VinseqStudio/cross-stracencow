@@ -17,8 +17,10 @@ export const GET: APIRoute = async ({ site }) => {
 - Edycja: ${event.edition}
 - Termin: ${event.dates.label}${event.dates.assumed ? ' (do potwierdzenia w regulaminie)' : ''}
 - Miejsce: ${event.venue.name}, ${event.venue.city}
-- Zapisy: ${event.registration.open ? 'otwarte' : 'jeszcze nieotwarte'}
-- Kontakt: ${event.organizer.email}
+- Zapisy: ${event.registration.open ? `otwarte, ${event.registration.url}` : 'jeszcze nieotwarte'}
+- Kontakt (biuro zawodów): ${event.organizer.email}, tel. ${event.organizer.phone} (${event.organizer.phoneHours})
+- Organizator: ${event.organizer.person}, tel. ${event.organizer.personPhone}
+- Znak rozpoznawczy trasy: Ściana Płaczu, stromy podbieg polewany wodą, który zamienia się w ścianę błota (na 10 km pokonywany dwa razy)
 
 ## Dystanse
 
@@ -39,7 +41,8 @@ ${faq.map((f) => `- ${f.q} ${f.a}`).join('\n')}
 ## Wyniki
 
 ${editions
-  .map((e) => `- ${e.year} (${e.number} edycja): ${base}/wyniki/${e.year}/${withData.has(e.year) ? ` (JSON: ${base}/wyniki/${e.year}.json)` : ' (tabele w przygotowaniu)'}`)
+  .filter((e) => withData.has(e.year))
+  .map((e) => `- ${e.year}: ${base}/wyniki/${e.year}/ (JSON: ${base}/wyniki/${e.year}.json)`)
   .join('\n')}
 
 ## Strony

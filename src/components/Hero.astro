@@ -1,20 +1,27 @@
 ---
+// Pierwszy ekran strony głównej: tytuł, rotator przeszkód, termin, przyciski i odliczanie do startu.
+// Wejście tytułu jest w CSS (global.css: [data-line], [data-enter]); skrypt na dole obsługuje tylko rotator i licznik.
 import { Picture } from 'astro:assets';
-import { ArrowRight } from '@lucide/astro';
+import { ArrowRight, ArrowUpRight } from '@lucide/astro';
 import { photo } from '../lib/photos';
 import { event } from '../data/event';
 
-const days = Math.max(0, Math.ceil((new Date(event.dates.start).getTime() - Date.now()) / 864e5));
-const facts = [
-  { label: 'Edycja', value: `${event.edition}` },
-  { label: 'Termin', value: event.dates.label },
-  { label: 'Miejsce', value: event.venue.name },
-  { label: 'Start za', value: `${days} dni`, countdown: true },
+// Licznik w HTML z dnia budowania; przeglądarka od razu podmienia go na aktualny.
+const ms = Math.max(0, new Date(event.dates.start).getTime() - Date.now());
+const pad = (n: number) => String(n).padStart(2, '0');
+const cells = [
+  { key: 'd', value: String(Math.floor(ms / 864e5)), label: 'dni' },
+  { key: 'h', value: pad(Math.floor(ms / 36e5) % 24), label: 'godz.' },
+  { key: 'm', value: pad(Math.floor(ms / 6e4) % 60), label: 'min' },
+  { key: 's', value: pad(Math.floor(ms / 1e3) % 60), label: 'sek.' },
 ];
+
+// Przeszkody zmieniają się w linii pod tytułem, jedna po drugiej.
+const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', 'strome zbiegi'];
 ---
 
 <section class="hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="hero-title">
-  <div class="hero-media absolute inset-x-0 top-0 -z-10 h-[56svh] lg:inset-0 lg:h-auto" aria-hidden="true">
+  <div class="hero-media absolute inset-x-0 -top-[40%] -z-10 h-full overflow-hidden sm:-top-[28%] lg:inset-0 lg:h-auto" aria-hidden="true">
     <Picture
       src={photo('2025/2025-03.jpg')}
       alt=""
@@ -23,80 +30,142 @@ const facts = [
       formats={['avif', 'webp']}
       loading="eager"
       fetchpriority="high"
-      class="size-full object-cover object-[52%_60%] saturate-[.85] lg:object-[50%_45%]"
+      class="hero-img size-full object-cover object-[46%_50%] saturate-[.85] lg:object-[50%_40%]"
     />
   </div>
 
-  <div class="wrap flex min-h-[calc(100svh-64px)] flex-col justify-end pt-[44svh] pb-8 lg:min-h-[calc(100svh-72px)] lg:pt-32 lg:pb-10">
-    <p class="eyebrow mb-3 lg:mb-4" data-enter>Głogów, {event.dates.label}</p>
-    <h1 id="hero-title" class="hero-title font-display leading-[0.84] uppercase" data-enter>
-      Cross <span class="whitespace-nowrap">Straceńców</span>
+  <div class="wrap flex min-h-[calc(100svh-64px)] flex-col justify-end pt-[18svh] pb-6 sm:pt-[30svh] sm:pb-8 lg:min-h-[calc(100svh/var(--page-zoom)-72px)] lg:pt-16 lg:pb-12">
+    <p class="eyebrow mb-3 sm:mb-4 lg:mb-6" data-enter style="--i:0">Cross Straceńców, {event.edition} edycja</p>
+    <h1 id="hero-title" class="hero-title font-display uppercase">
+      <span class="line"><span class="block" data-line style="--i:0">Jedyny taki bieg</span></span>
+      <span class="line"><span class="block text-red" data-line style="--i:1">w Polsce.</span></span>
     </h1>
-    <span class="trail mt-5 w-[min(280px,60%)] origin-left lg:mt-6" data-enter-trail></span>
 
-    <div class="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-12">
-      <p class="lead max-w-[46ch] text-fg/90" data-enter>
-        <strong class="font-semibold text-fg">Jedyny taki bieg w Polsce.</strong> Pięć albo dziesięć kilometrów przez rowy
-        z wodą, błoto i piaszczyste podbiegi toru motocrossowego w Górkowie.
-      </p>
-      <div class="flex flex-wrap gap-3" data-enter>
-        <a href="#dystanse" class="btn btn-secondary min-h-14 grow px-7 sm:grow-0">Zobacz dystanse <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
-        <a href="#trasa" class="btn btn-outline min-h-14 grow border-fg/40 px-7 sm:grow-0">Zobacz trasę</a>
+    <p class="obstacles mt-3 font-condensed text-[22px] leading-tight font-bold sm:mt-5 sm:text-[28px] lg:mt-6 lg:text-[32px]" data-enter style="--i:1">
+      <span class="sr-only">5 albo 10 km przez {obstacles.join(', ')}.</span>
+      <span aria-hidden="true" class="inline-flex flex-wrap items-start gap-x-[0.3em]">
+        <span class="text-fg/80">5 albo 10 km przez</span>
+        <span class="rotator relative inline-grid shrink-0 overflow-hidden pb-[0.12em]">
+          {obstacles.map((o, i) => (
+            <span class:list={['rotator-word col-start-1 row-start-1 whitespace-nowrap text-fg', i > 0 && 'is-waiting']}>{o}</span>
+          ))}
+        </span>
+      </span>
+    </p>
+    <span class="trail mt-5 hidden w-[min(280px,60%)] origin-left sm:block lg:mt-6" data-enter-trail></span>
+
+    <div class="mt-5 grid gap-6 sm:mt-6 sm:gap-8 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16">
+      <div class="grid gap-5 sm:gap-6" data-enter style="--i:2">
+        <p class="font-condensed text-[19px] font-semibold text-fg sm:hidden">{event.dates.label}, Głogów</p>
+        <p class="lead hidden max-w-[44ch] text-fg/90 sm:block">
+          Naturalne przeszkody toru motocrossowego w Górkowie i medal Finisher dla każdego, kto dobiegnie.
+          {" "}<strong class="font-semibold text-fg">{event.dates.label}, Głogów.</strong>
+        </p>
+        <div class="grid gap-3 sm:flex sm:flex-wrap">
+          <a href={event.registration.url} target="_blank" rel="noopener" class="btn btn-primary min-h-14 grow px-7 sm:grow-0">Zapisz się na start <ArrowUpRight aria-hidden="true" stroke-linecap="square" /></a>
+          <a href="#dystanse" class="btn btn-outline min-h-12 grow border-fg/40 px-7 sm:min-h-14 sm:grow-0">Zobacz dystanse <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
+        </div>
+      </div>
+
+      <div class="countdown grid gap-2 border-t border-fg/20 pt-4 sm:gap-3 sm:pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10" data-target={event.dates.start} data-enter style="--i:3">
+        <p class="text-[15px] text-muted" id="cd-label">Do startu zostało</p>
+        <div class="grid grid-cols-4 gap-2 tabular-nums" role="timer" aria-labelledby="cd-label">
+          {cells.map((c) => (
+            <div class="grid justify-items-start gap-1 lg:min-w-[92px]">
+              <span class:list={['overflow-hidden font-display text-[40px] leading-[0.9] sm:text-[56px] lg:text-[64px]', c.key === 's' && 'text-red']}><span class="block" data-cd={c.key}>{c.value}</span></span>
+              <span class="font-condensed text-[15px] font-semibold tracking-[0.04em] text-muted uppercase">{c.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-
-    <dl class="mt-8 grid grid-cols-2 border-t border-fg/20 lg:mt-10 lg:grid-cols-4" data-enter>
-      {facts.map((f, i) => (
-        <div class:list={['grid content-start gap-1 py-4 lg:py-5', i % 2 === 0 ? 'pr-4' : 'border-l border-fg/20 pl-4', i >= 2 && 'border-t border-fg/20 lg:border-t-0', 'lg:border-l lg:border-fg/20 lg:px-6 lg:first:border-l-0 lg:first:pl-0']}>
-          <dt class="text-[13px] leading-[18px] text-muted">{f.label}</dt>
-          <dd class="font-condensed text-[20px] leading-[1.15] font-bold lg:text-[22px]" data-countdown={f.countdown ? event.dates.start : undefined}>{f.value}</dd>
-        </div>
-      ))}
-    </dl>
   </div>
 </section>
 
 <style>
-  .hero-title { font-size: clamp(64px, 17.5vw, 96px); letter-spacing: 0.002em; }
-  @media (min-width: 640px) { .hero-title { font-size: clamp(88px, 13vw, 132px); } }
-  /* Od 1024px nazwa w jednej linii na całą szerokość kontenera (7,5em przy Anton). */
-  @media (min-width: 1024px) { .hero-title { font-size: clamp(104px, 11.4vw, 164px); white-space: nowrap; } }
+  .hero-title { font-size: clamp(48px, 13.4vw, 76px); line-height: 0.88; letter-spacing: 0.004em; }
+  @media (min-width: 640px) { .hero-title { font-size: clamp(72px, 10vw, 96px); } }
+  @media (min-width: 1024px) { .hero-title { font-size: clamp(84px, 7.4vw, 120px); } }
+  .hero-title .line { display: block; overflow: hidden; padding-bottom: 0.04em; }
+
+  /* Zdjęcie powoli „oddycha”, żeby hero nie stało w miejscu. */
+  .hero-img { transform-origin: 60% 40%; animation: drift 26s ease-in-out infinite alternate; }
+  @keyframes drift {
+    from { transform: scale(1) translate3d(0, 0, 0); }
+    to { transform: scale(1.07) translate3d(-1.2%, -1%, 0); }
+  }
+
+
+
+  .rotator-word { color: var(--accent-text); }
+  .rotator-word.is-waiting { opacity: 0; transform: translateY(100%); }
+
   .hero-media::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(18, 18, 17, 0.05) 0%, rgba(18, 18, 17, 0.25) 45%, rgba(18, 18, 17, 0.88) 82%, #121211 100%);
+    background: linear-gradient(180deg, rgba(18, 18, 17, 0.1) 0%, rgba(18, 18, 17, 0.2) 55%, rgba(18, 18, 17, 0.85) 82%, #121211 97%);
   }
   @media (min-width: 1024px) {
     .hero-media::after {
       background:
-        linear-gradient(0deg, #121211 0%, rgba(18, 18, 17, 0.82) 28%, rgba(18, 18, 17, 0.25) 62%, rgba(18, 18, 17, 0.1) 100%),
-        linear-gradient(90deg, rgba(18, 18, 17, 0.35) 0%, rgba(18, 18, 17, 0) 55%);
+        linear-gradient(0deg, #121211 0%, rgba(18, 18, 17, 0.82) 30%, rgba(18, 18, 17, 0.25) 62%, rgba(18, 18, 17, 0.15) 100%),
+        linear-gradient(90deg, rgba(18, 18, 17, 0.45) 0%, rgba(18, 18, 17, 0) 55%);
     }
   }
-  :global(.js) .hero [data-enter] { opacity: 0; }
-  :global(.js) .hero [data-enter-trail] { transform: skewX(-12deg) scaleX(0); }
+  /* Wejście hero jest w CSS (global.css: [data-line], [data-enter]), tu tylko później startuje reszta i kreska. */
+  .hero { --enter-start: 0.35s; }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero [data-enter-trail] { animation: hero-trail 0.6s var(--ease-out-quint) 0.6s both; }
+  }
+  @keyframes hero-trail { from { transform: skewX(-12deg) scaleX(0); } }
   @media (prefers-reduced-motion: reduce) {
-    :global(.js) .hero [data-enter] { opacity: 1; }
-    :global(.js) .hero [data-enter-trail] { transform: skewX(-12deg); }
+    .hero-img { animation: none; }
   }
 </style>
 
 <script>
-  import { animate, stagger } from 'motion';
+  // Bez bibliotek: animacje przez Web Animations API (element.animate), żeby skrypt mógł być wklejony w HTML.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
-  // Wejście hero: jeden raz przy załadowaniu.
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const ease = [0.22, 1, 0.36, 1] as const;
-    animate('.hero-media img', { scale: [1.08, 1] }, { duration: 1.6, ease });
-    animate('.hero [data-enter]', { opacity: [0, 1], y: [28, 0] }, { duration: 0.75, delay: stagger(0.09, { startDelay: 0.1 }), ease });
-    animate('.hero [data-enter-trail]', { transform: ['skewX(-12deg) scaleX(0)', 'skewX(-12deg) scaleX(1)'] }, { duration: 0.6, delay: 0.4, ease });
+  // Wejście hero (linie tytułu spod maski, reszta od dołu) jest w CSS, żeby tekst nie czekał na ten skrypt.
+
+  // Przeszkody: co 2,6 s nowe słowo wjeżdża od dołu, poprzednie wyjeżdża w górę.
+  const words = [...document.querySelectorAll<HTMLElement>('.hero .rotator-word')];
+  if (words.length > 1 && !reduce) {
+    let i = 0;
+    setInterval(() => {
+      if (document.hidden) return;
+      const out = words[i];
+      i = (i + 1) % words.length;
+      const next = words[i];
+      out.animate({ transform: ['translateY(0%)', 'translateY(-100%)'], opacity: [1, 0] }, { duration: 500, easing: ease, fill: 'forwards' });
+      next.classList.remove('is-waiting');
+      next.animate({ transform: ['translateY(100%)', 'translateY(0%)'], opacity: [0, 1] }, { duration: 500, easing: ease, fill: 'forwards' });
+    }, 2600);
   }
 
-  // Dni do startu, liczone w przeglądarce (HTML ma wartość z dnia budowania).
-  const el = document.querySelector<HTMLElement>('[data-countdown]');
-  if (el) {
-    const d = Math.max(0, Math.ceil((new Date(el.dataset.countdown!).getTime() - Date.now()) / 864e5));
-    el.textContent = d === 0 ? 'Dziś' : `${d} ${d === 1 ? 'dzień' : 'dni'}`;
+  // Licznik: dni, godziny, minuty, sekundy. Zmieniona cyfra wjeżdża od dołu.
+  const box = document.querySelector<HTMLElement>('.countdown');
+  if (box) {
+    const target = new Date(box.dataset.target!).getTime();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const timer = box.querySelector<HTMLElement>('[role="timer"]')!;
+    const tick = () => {
+      const ms = Math.max(0, target - Date.now());
+      const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60, s = Math.floor(ms / 1e3) % 60;
+      const values: Record<string, string> = { d: String(d), h: pad(h), m: pad(m), s: pad(s) };
+      for (const el of box.querySelectorAll<HTMLElement>('[data-cd]')) {
+        const v = values[el.dataset.cd!];
+        if (el.textContent === v) continue;
+        el.textContent = v;
+        if (!reduce) el.animate({ transform: ['translateY(60%)', 'translateY(0%)'], opacity: [0, 1] }, { duration: 400, easing: ease });
+      }
+      // Czytnik ekranu dostaje tylko pełne minuty, sekundy by go zalewały.
+      timer.setAttribute('aria-label', `${d} dni, ${h} godzin i ${m} minut`);
+    };
+    tick();
+    setInterval(tick, 1000);
   }
 </script>

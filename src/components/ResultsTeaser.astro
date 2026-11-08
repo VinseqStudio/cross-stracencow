@@ -1,60 +1,53 @@
 ---
+// Zapowiedź wyników na stronie głównej: zwycięzcy ostatniej edycji i link do /wyniki/.
 import { Picture } from 'astro:assets';
 import { ArrowRight } from '@lucide/astro';
-import { db, Edition, Result, eq, asc, desc } from 'astro:db';
+import { db, Edition, eq } from 'astro:db';
 import SectionHead from './SectionHead.astro';
 import { photo } from '../lib/photos';
+import { resultsOf, yearsWithResults } from '../lib/results';
 
-const year = 2025;
-const rows = await db.select().from(Result).where(eq(Result.year, year)).orderBy(asc(Result.race), asc(Result.place));
-const km = (race: string) => Number(race.match(/(\d+)\s*km/)?.[1] ?? 0);
-const races = [...new Set(rows.map((r) => r.race))].sort((a, b) => km(b) - km(a));
-// Zwycięzca i zwyciężczyni każdego biegu, od najdłuższego.
+// Ostatnia edycja z wynikami w bazie: po dodaniu nowego roku zapowiedź zmieni się sama.
+const year = (await yearsWithResults())[0].year;
+const { rows, races } = await resultsOf(year);
+const [edition] = await db.select().from(Edition).where(eq(Edition.year, year));
+const date = edition?.date
+  ? new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(edition.date))
+  : String(year);
+// Zwycięzca i zwyciężczyni każdego biegu, od najdłuższego (razem ze sztafetą, jeśli była).
 const winners = races.map((race) => ({
   race,
   man: rows.find((r) => r.race === race && r.sex === 'M'),
   woman: rows.find((r) => r.race === race && r.sex === 'K'),
 }));
-const editions = await db.select().from(Edition).orderBy(desc(Edition.year));
 ---
 
-<section id="wyniki" class="section-pad bg-bg" aria-labelledby="wyniki-title">
+<section id="wyniki" class="defer-render section-pad bg-bg" aria-labelledby="wyniki-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <SectionHead id="wyniki-title" title="Wyniki wszystkich edycji" lead="Najszybsi na mecie XV edycji, 27 kwietnia 2025. Tabele każdego roku znajdziesz w archiwum.">
-      <a href="/wyniki/" class="btn btn-outline">Wszystkie wyniki <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
+    <SectionHead id="wyniki-title" title="Najszybsi na mecie" lead={`Zwycięzcy ostatniej edycji, ${date}. Pełne tabele i wcześniejsze lata znajdziesz w archiwum wyników.`}>
+      <a href="/wyniki/" class="btn btn-outline w-full sm:w-auto">Zobacz archiwum wyników <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
     </SectionHead>
 
     <div class="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-6">
-      <div class="grid content-between gap-8">
+      <div class="grid content-start">
         <dl class="grid border-t border-line">
           {winners.map((w) => (
-            <div class="grid gap-2 border-b border-line py-5 sm:grid-cols-[200px_1fr] sm:gap-6">
-              <dt class="font-condensed text-xl leading-tight font-bold">{w.race}</dt>
-              <dd class="grid gap-1.5">
+            <div class="grid gap-3 border-b border-line py-6">
+              <dt class="inline-flex items-center gap-2 font-condensed text-[15px] font-bold tracking-[0.06em] text-muted uppercase">{w.race}</dt>
+              <dd class="grid gap-3 sm:grid-cols-2 sm:gap-6">
                 {[w.man, w.woman].filter(Boolean).map((r) => (
-                  <span class="flex items-baseline justify-between gap-4">
+                  <span class="grid gap-1">
+                    <span class="font-display text-[clamp(36px,3.6vw,48px)] leading-none tabular-nums">{r!.time}</span>
                     <span><span class="font-semibold">{r!.name}</span> <span class="text-muted">{r!.city}</span></span>
-                    <span class="font-condensed text-lg font-bold tabular-nums">{r!.time}</span>
                   </span>
                 ))}
               </dd>
             </div>
           ))}
         </dl>
-        <nav aria-label="Wyniki według roku">
-          <ul class="grid grid-cols-4 gap-2 sm:grid-cols-8">
-            {editions.map((e) => (
-              <li>
-                <a href={`/wyniki/${e.year}/`} class="grid min-h-14 place-items-center rounded-sm border border-line-strong px-2 transition-colors hover:border-fg hover:bg-fg hover:text-bg">
-                  <span class="font-condensed text-lg leading-none font-bold tabular-nums">{e.year}</span>
-                  <span class="text-[12px] leading-4 text-muted">{e.number}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </div>
       <div class="aspect-[4/3] overflow-hidden lg:aspect-auto">
+        {/* Zdjęcie z mety 2025. Po kolejnej edycji podmień na kadr z nowego roku. */}
         <Picture
           src={photo('2025/2025-09.jpg')}
           alt="Zawodnik w żółtej koszulce z numerem 30 unosi pięść pod bramą mety"

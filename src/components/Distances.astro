@@ -1,19 +1,38 @@
 ---
+// Dystanse („Wybierz swoje wyzwanie”): cztery karty biegów z ceną, trudnością, faktami i przyciskiem zapisu.
+// Obok nagłówka: ramka „W każdym pakiecie startowym”. Dane kart: `distances` w src/data/event.ts.
+// Telefon: karty układają się w stos (sticky), tylko gdy każda mieści się cała na ekranie (skrypt na dole).
 import { Picture } from 'astro:assets';
+import { ArrowUpRight, Timer, Medal, Utensils, HeartPulse } from '@lucide/astro';
 import SectionHead from './SectionHead.astro';
-import { distances } from '../data/event';
+import { distances, event } from '../data/event';
 import { photo } from '../lib/photos';
 
-const levels = ['Na start', 'Spokojnie', 'Wymagająco', 'Twardo', 'Straceńczo'];
+const levels = ['Dla każdego', 'Umiarkowany', 'Wymagający', 'Trudny', 'Straceńczy'];
 const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copper: 'var(--medal-copper)' };
 ---
 
 <section id="dystanse" class="section-pad bg-bg" aria-labelledby="dystanse-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <SectionHead id="dystanse-title" title="Wybierz swoje wyzwanie" lead="Pięć kilometrów, dziesięć albo sztafeta z przyjaciółmi. Na mecie każdy dostaje medal Finisher." />
+    <SectionHead id="dystanse-title" title="Wybierz swoje wyzwanie" lead="Pięć kilometrów, dziesięć albo sztafeta z przyjaciółmi. Na mecie każdy dostaje medal Finisher.">
+      <div class="grid w-full gap-3 rounded-sm bg-surface p-5 lg:w-[400px]">
+        <p class="font-condensed text-[15px] font-bold tracking-[0.06em] uppercase">W każdym pakiecie startowym</p>
+        <ul class="grid grid-cols-2 gap-x-4 gap-y-3 text-[15px] leading-5">
+          {[
+            { Icon: Timer, t: 'Numer z chipem i pomiar czasu' },
+            { Icon: Medal, t: 'Medal Finisher na mecie' },
+            { Icon: Utensils, t: 'Posiłek po biegu' },
+            { Icon: HeartPulse, t: 'Opieka medyczna i depozyt' },
+          ].map(({ Icon, t }) => (
+            <li class="flex items-start gap-2.5"><Icon class="mt-px size-5 shrink-0 text-accent" aria-hidden="true" stroke-linecap="square" />{t}</li>
+          ))}
+        </ul>
+      </div>
+    </SectionHead>
 
     <div class="cards grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
       {distances.map((d, i) => (
+        <>
         <article
           id={`dystans-${d.id}`}
           class:list={['card relative flex flex-col rounded-sm bg-raised', d.first ? 'border-2 border-fg' : 'border border-line']}
@@ -24,7 +43,7 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
               Na pierwszy raz
             </span>
           )}
-          <div class="aspect-[16/10] overflow-hidden">
+          <div class="card-photo aspect-[5/2] overflow-hidden sm:aspect-[16/10]">
             <Picture
               src={photo(d.photo)}
               alt={d.alt}
@@ -34,7 +53,7 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
               class="size-full object-cover"
             />
           </div>
-          <div class="flex flex-1 flex-col gap-3 p-5">
+          <div class="flex flex-1 flex-col gap-2.5 p-4 sm:gap-3 sm:p-5">
             <div class="flex items-end justify-between gap-3">
               <div class="grid gap-1">
                 <h3 class="inline-flex items-center gap-2 font-condensed text-[14px] font-bold tracking-[0.06em] text-muted uppercase">
@@ -42,7 +61,7 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
                 </h3>
                 <p class="font-display text-[44px] leading-[0.95] whitespace-nowrap uppercase lg:text-[clamp(36px,3.3vw,48px)]">{d.distance}</p>
               </div>
-              <p class="pb-1 text-right font-display text-[26px] leading-none tabular-nums">{d.price}</p>
+              <p class="pb-1 text-right font-display text-[26px] leading-none whitespace-nowrap tabular-nums">{d.price}</p>
             </div>
             <span class="inline-flex items-center gap-2" role="img" aria-label={`Trudność ${d.difficulty} na 5: ${levels[d.difficulty - 1]}`}>
               <span class="inline-flex gap-[3px]" aria-hidden="true">
@@ -55,37 +74,113 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
             <p class="text-[15px] leading-[22px]">{d.description}</p>
             <ul class="mt-auto grid border-t border-line text-[14px] leading-5">
               {[...d.facts, { label: 'Limit', value: d.limit }].map((f) => (
-                <li class="flex justify-between gap-3 border-b border-line py-2">
+                <li class="flex justify-between gap-3 border-b border-line py-1.5 sm:py-2">
                   <span class="text-muted">{f.label}</span><span class="text-right font-semibold">{f.value}</span>
                 </li>
               ))}
             </ul>
+            <a
+              href={event.registration.url}
+              target="_blank"
+              rel="noopener"
+              class:list={['btn mt-1 min-h-12 w-full px-4 text-[16px]', d.first ? 'btn-primary' : 'btn-secondary']}
+              aria-label={`Zapisz się: ${d.name}, ${d.distance}`}
+            >Zapisz się <ArrowUpRight aria-hidden="true" stroke-linecap="square" /></a>
           </div>
         </article>
+        {/* Odstęp w stosie kart na telefonie (widoczny tylko z klasą .stack). To osobny element, nie margines karty:
+            margines przypiętej karty skracałby jej przypięcie i ostatnia karta nie weszłaby w całości na stos.
+            Odstęp za ostatnią kartą pozwala jej też przypiąć się na swoim miejscu w stosie. */}
+        <div class="stack-gap hidden" aria-hidden="true"></div>
+        </>
       ))}
     </div>
   </div>
 </section>
 
+{/* Telefon, stos kart: na dole ekranu pasek „który dystans z czterech” zamiast paska zapisów.
+    Każda karta ma własny przycisk zapisu, więc tu tylko postęp. Pokazuje go skrypt niżej. */}
+<div class="stack-progress fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/95 backdrop-blur-sm sm:hidden" data-shown="false" aria-hidden="true">
+  <div class="wrap flex items-center justify-between gap-4 py-3">
+    <span class="font-condensed text-[17px] leading-none font-bold">
+      <span class="tabular-nums" data-stack-n>1</span> z {distances.length}
+      <span class="ml-1 font-semibold text-muted" data-stack-name>{distances[0].name}</span>
+    </span>
+    <span class="flex gap-1.5">
+      {distances.map((_, i) => <i class:list={['stack-seg', i === 0 && 'is-on']}></i>)}
+    </span>
+  </div>
+</div>
+
 <style>
-  /* Telefon: karty zatrzymują się pod nagłówkiem i nakładają jedna na drugą. */
+  /* Pasek postępu stosu kart (telefon). Segment zapala się, gdy karta wchodzi na stos. */
+  .stack-progress { transform: translateY(100%); transition: transform 0.3s var(--ease-out-quint); padding-bottom: env(safe-area-inset-bottom); }
+  .stack-progress[data-shown='true'] { transform: none; }
+  .stack-seg { display: block; width: 28px; height: 6px; background: var(--surface-sunken); transform: skewX(-12deg); transition: background-color 0.3s ease, transform 0.3s var(--ease-out-quint); }
+  .stack-seg.is-on { background: var(--red); }
+  .stack-seg.is-current { transform: skewX(-12deg) scaleY(1.6); }
+
+  /* Telefon: karty zatrzymują się pod nagłówkiem i nakładają jedna na drugą.
+     Tylko gdy cała karta mieści się na ekranie (klasa .stack z JS), inaczej jej dół byłby niewidoczny. */
   @media (max-width: 639px) {
-    .card { position: sticky; top: calc(76px + var(--i) * 12px); transform-origin: 50% 0; }
+    .cards.stack .card { position: sticky; top: calc(72px + var(--i) * 8px); transform-origin: 50% 0; }
+    /* W stosie zdjęcie jest niższe, żeby każda karta zmieściła się cała razem z paskiem postępu pod nią. */
+    .cards.stack .card-photo { aspect-ratio: 3 / 1; }
+    /* Przerwa między kartami w stosie: przypięta karta stoi cała na ekranie przez ok. 35% wysokości ekranu przewijania,
+       zanim następna zacznie ją przykrywać. Wtedy da się ją przeczytać i kliknąć „Zapisz się”. */
+    .cards.stack .stack-gap { display: block; height: 35svh; margin-block: -16px; }
+    .cards.stack .stack-gap:last-child { height: 12svh; margin-bottom: 0; }
   }
 </style>
 
 <script>
-  import { scroll, animate } from 'motion';
-
-  // Karta przykryta przez następną cofa się i lekko przygasa.
+  // Telefon: karty dystansów układają się w stos (sticky w CSS). Karta przykrywana przez następną
+  // cofa się i lekko przygasa, w rytm przewijania. Stos włączamy tylko, gdy każda karta mieści się cała na ekranie.
+  // Na dole ekranu pasek postępu „2 z 4” przeskakuje z karty na kartę (gdy jest na niego miejsce pod kartami).
   const phone = matchMedia('(max-width: 639px)');
-  if (phone.matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const cards = [...document.querySelectorAll<HTMLElement>('#dystanse .card')];
-    cards.slice(0, -1).forEach((card, i) => {
-      scroll(animate(card, { scale: [1, 0.94], filter: ['brightness(1)', 'brightness(0.82)'] }, { ease: 'linear' }), {
-        target: cards[i + 1],
-        offset: ['start end', `start ${76 + (i + 1) * 12}px`],
+  const grid = document.querySelector<HTMLElement>('#dystanse .cards');
+  const cards = [...document.querySelectorAll<HTMLElement>('#dystanse .card')];
+  const progress = document.querySelector<HTMLElement>('.stack-progress');
+  const top = (i: number) => 72 + i * 8; // ta sama wysokość przypięcia co w CSS
+  // Karta mieści się, gdy jej dół (przypiętej) jest nad dołem ekranu albo nad paskiem postępu.
+  const fits = (extra: number) => cards.every((c, i) => c.offsetHeight + top(i) + (extra ? 2 : 8) + extra <= innerHeight);
+  const start = () => {
+    if (!grid || !phone.matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    grid.classList.add('stack'); // najpierw klasa (niższe zdjęcia), potem pomiar
+    if (!fits(0)) return grid.classList.remove('stack');
+    const withBar = !!progress && fits(progress.offsetHeight);
+    const num = progress?.querySelector<HTMLElement>('[data-stack-n]');
+    const name = progress?.querySelector<HTMLElement>('[data-stack-name]');
+    const segs = [...(progress?.querySelectorAll<HTMLElement>('.stack-seg') ?? [])];
+    const names = cards.map((c) => c.querySelector('h3')?.textContent?.trim() ?? '');
+    let shown = -1;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      for (let i = 0; i < cards.length - 1; i++) {
+        // 0, gdy następna karta dopiero wchodzi od dołu ekranu; 1, gdy dojechała na swoje miejsce w stosie.
+        const next = cards[i + 1].getBoundingClientRect().top;
+        const p = Math.min(1, Math.max(0, (innerHeight - next) / (innerHeight - top(i + 1))));
+        cards[i].style.transform = p ? `scale(${1 - 0.06 * p})` : '';
+        cards[i].style.filter = p ? `brightness(${1 - 0.18 * p})` : '';
+      }
+      if (!withBar || !progress) return;
+      // Bieżąca karta: ostatnia, której góra minęła połowę ekranu.
+      const current = Math.max(0, cards.filter((c) => c.getBoundingClientRect().top < innerHeight * 0.5).length - 1);
+      const g = grid.getBoundingClientRect();
+      progress.dataset.shown = String(g.top < innerHeight * 0.5 && g.bottom > innerHeight);
+      if (current === shown) return;
+      shown = current;
+      if (num) num.textContent = String(current + 1);
+      if (name) name.textContent = names[current];
+      segs.forEach((s, i) => {
+        s.classList.toggle('is-on', i <= current);
+        s.classList.toggle('is-current', i === current);
       });
-    });
-  }
+    };
+    addEventListener('scroll', () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
+    update();
+  };
+  // Wysokość kart liczymy po wczytaniu fontów, bo inny font zmienia łamanie tekstu.
+  document.fonts.ready.then(start);
 </script>

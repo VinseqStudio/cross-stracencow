@@ -1,0 +1,90 @@
+---
+// Pasek liczb pod hero: cztery fakty o biegu, każdy prowadzi dalej w głąb strony.
+import { ArrowUpRight } from '@lucide/astro';
+import { editions } from '../../db/data/editions';
+
+const facts = [
+  { value: 1500, suffix: '+', label: 'osób ukończyło nasz bieg', href: '/wyniki/' },
+  { value: editions.length, label: `edycji od ${editions[0].year} roku`, href: '#historia' },
+  { value: 2, label: 'dni na torze: biegi główne, sztafety i dzieci', href: '#program' },
+  { value: 100, suffix: '%', label: 'osób na mecie z medalem Finisher', href: '#dystanse' },
+];
+---
+
+<section class="facts relative bg-bg text-fg" data-theme="dark" aria-label="Cross Straceńców w liczbach">
+  <div class="wrap">
+  <ul class="grid grid-cols-2 border-t border-fg/15 lg:grid-cols-4">
+    {facts.map((f) => {
+      const Tag = f.href ? 'a' : 'div';
+      return (
+        <li class="fact border-fg/15">
+          <Tag href={f.href} class:list={['group flex h-full flex-col gap-2 py-7 lg:py-10', f.href && 'fact-link']}>
+            <span class="flex items-start justify-between gap-3">
+              <span class="font-display text-[44px] leading-[0.9] tabular-nums sm:text-[56px] lg:text-[64px]"><span data-count={f.value}>{f.value}</span>{f.suffix && <span class="text-red">{f.suffix}</span>}</span>
+              {f.href && <ArrowUpRight class="mt-1 size-5 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-red" aria-hidden="true" stroke-linecap="square" />}
+            </span>
+            <span class="max-w-[22ch] font-condensed text-[17px] leading-tight font-semibold text-muted transition-colors group-hover:text-fg">{f.label}</span>
+          </Tag>
+        </li>
+      );
+    })}
+  </ul>
+  </div>
+</section>
+
+<style>
+  /* Telefon i tablet: 2 × 2 z liniami między polami. Desktop: jeden rząd z pionowymi liniami. */
+  .fact > * { padding-inline: 16px; }
+  .fact:nth-child(odd) > * { padding-left: 0; }
+  .fact:nth-child(even) { border-left-width: 1px; }
+  .fact:nth-child(n + 3) { border-top-width: 1px; }
+  @media (min-width: 1024px) {
+    .fact > * { padding-inline: 32px; }
+    .fact:nth-child(n + 2) { border-left-width: 1px; }
+    .fact:nth-child(n + 3) { border-top-width: 0; }
+    .fact:nth-child(3) > * { padding-left: 32px; }
+    .fact:last-child > * { padding-right: 0; }
+  }
+  .fact-link { position: relative; }
+  .fact-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s var(--ease-out-quint);
+  }
+  .fact-link:hover::after, .fact-link:focus-visible::after { transform: scaleX(1); }
+</style>
+
+<script>
+  // Liczby odliczają w górę jeden raz, gdy pasek w 40% wejdzie na ekran. Bez bibliotek (requestAnimationFrame).
+  const band = document.querySelector<HTMLElement>('.facts');
+  if (band && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const els = [...band.querySelectorAll<HTMLElement>('[data-count]')];
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 5);
+    const run = () => {
+      const t0 = performance.now();
+      const frame = (now: number) => {
+        let busy = false;
+        els.forEach((el, i) => {
+          const t = Math.min(1, Math.max(0, (now - t0 - i * 80) / 1400));
+          el.textContent = String(Math.round(Number(el.dataset.count) * easeOut(t)));
+          if (t < 1) busy = true;
+        });
+        if (busy) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      run();
+    }, { threshold: 0.4 });
+    io.observe(band);
+  }
+</script>

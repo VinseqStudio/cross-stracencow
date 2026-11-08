@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro';
 import { db, Edition, Result, eq, asc } from 'astro:db';
+import { yearsWithResults } from '../../lib/results';
 
 // Wyniki edycji jako JSON: dla agentów AI, aplikacji i dziennikarzy.
 export async function getStaticPaths() {
-  const years = await db.select({ year: Edition.year }).from(Edition);
-  return years.map(({ year }) => ({ params: { year: String(year) } }));
+  return (await yearsWithResults()).map(({ year }) => ({ params: { year: String(year) } }));
 }
 
 export const GET: APIRoute = async ({ params }) => {
@@ -13,7 +13,6 @@ export const GET: APIRoute = async ({ params }) => {
   const results = await db.select().from(Result).where(eq(Result.year, year)).orderBy(asc(Result.race), asc(Result.place));
   const body = {
     event: 'Cross Straceńców Głogów',
-    edition: edition.number,
     year,
     date: edition.date,
     races: [...new Set(results.map((r) => r.race))],

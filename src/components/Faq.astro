@@ -1,49 +1,95 @@
 ---
-import { Send } from '@lucide/astro';
-import { faq, event } from '../data/event';
+// „Zanim przyjedziesz”: pytania (z `faq` w src/data/event.ts), formularz pytania i karta kontaktu z biurem (#kontakt).
+// Formularz nie ma serwera: po walidacji otwiera pocztę z gotową wiadomością na adres biura.
+import { Send, Mail, Phone, User } from '@lucide/astro';
 
-const field = 'min-h-12 w-full rounded-sm border-[1.5px] border-line-strong bg-raised px-4 py-3 text-[17px] text-fg placeholder:text-muted hover:border-muted focus:border-fg aria-[invalid=true]:border-red-strong';
+const o = event.organizer;
+const tel = (n: string) => `tel:+48${n.replace(/\s/g, '')}`;
+const contacts = [
+  { Icon: Phone, k: 'Telefon', v: o.phone, href: tel(o.phone), note: o.phoneHours },
+  { Icon: Mail, k: 'E-mail', v: o.email, href: `mailto:${o.email}`, note: 'Odpowiadamy w dni robocze' },
+  { Icon: User, k: 'Organizator', v: o.personPhone, href: tel(o.personPhone), note: o.person },
+];
+import { faq, event } from '../data/event';
 ---
 
-<section id="faq" class="section-pad bg-surface" aria-labelledby="faq-title">
-  <div class="wrap grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
-    <div class="grid content-start gap-8 lg:sticky lg:top-28 lg:self-start">
+<section id="faq" class="defer-render section-pad bg-surface" aria-labelledby="faq-title">
+  <div class="wrap grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-10">
+    <div class="grid content-start gap-10">
       <div class="grid gap-3">
         <h2 id="faq-title" class="display-lg">Zanim przyjedziesz</h2>
-        <p class="lead max-w-[40ch] text-muted">Nie ma tu Twojego pytania? Napisz do biura zawodów.</p>
+        <p class="lead max-w-[48ch] text-muted">Najczęstsze pytania przed startem. Nie ma Twojego? Zadaj je w formularzu.</p>
       </div>
-
-      <form class="contact grid gap-4 rounded-sm bg-raised p-5 lg:p-6" novalidate data-to={event.organizer.email} aria-labelledby="kontakt-h">
-        <h3 id="kontakt-h" class="font-condensed text-[22px] leading-tight font-bold">Zapytaj organizatora</h3>
-        <div class="grid gap-2">
-          <label for="k-name" class="text-[15px] font-semibold">Imię</label>
-          <input id="k-name" name="name" autocomplete="given-name" required class={field} aria-describedby="k-name-err" />
-          <p id="k-name-err" class="err hidden text-sm font-semibold text-red-strong">Wpisz imię.</p>
-        </div>
-        <div class="grid gap-2">
-          <label for="k-mail" class="text-[15px] font-semibold">E-mail do odpowiedzi</label>
-          <input id="k-mail" name="email" type="email" autocomplete="email" required class={field} aria-describedby="k-mail-err" />
-          <p id="k-mail-err" class="err hidden text-sm font-semibold text-red-strong">Wpisz adres e-mail, np. jan@poczta.pl.</p>
-        </div>
-        <div class="grid gap-2">
-          <label for="k-msg" class="text-[15px] font-semibold">Pytanie</label>
-          <textarea id="k-msg" name="message" rows="3" required class:list={[field, 'resize-y']} aria-describedby="k-msg-err"></textarea>
-          <p id="k-msg-err" class="err hidden text-sm font-semibold text-red-strong">Napisz, o co chcesz zapytać.</p>
-        </div>
-        <button type="submit" class="btn btn-secondary w-full">Wyślij pytanie <Send aria-hidden="true" stroke-linecap="square" /></button>
-        <p class="text-sm text-muted">Odpowiadamy na <a class="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-red" href={`mailto:${event.organizer.email}`}>{event.organizer.email}</a></p>
-      </form>
+      <div class="faq border-t border-line-strong">
+        {faq.map((f) => (
+          <details class="border-b border-line-strong">
+            <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-5 font-condensed text-[22px] leading-[1.2] font-bold hover:text-accent">
+              {f.q}
+            </summary>
+            <p class="max-w-[64ch] pb-5 text-muted">{f.a}</p>
+          </details>
+        ))}
+      </div>
     </div>
 
-    <div class="faq self-start border-t border-line-strong">
-      {faq.map((f) => (
-        <details class="border-b border-line-strong">
-          <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-5 font-condensed text-[22px] leading-[1.2] font-bold hover:text-accent">
-            {f.q}
-          </summary>
-          <p class="max-w-[64ch] pb-5 text-muted">{f.a}</p>
-        </details>
-      ))}
+    <form class="contact flex flex-col gap-7 rounded-sm border border-line bg-raised px-5 py-8 shadow-soft sm:gap-6 sm:p-8 lg:gap-5" novalidate data-to={event.organizer.email} aria-labelledby="kontakt-h">
+      <div class="grid gap-2">
+        <h3 id="kontakt-h" class="flex items-center gap-4 font-display text-[40px] leading-none uppercase"><span class="trail w-12 shrink-0" aria-hidden="true"></span>Masz pytanie?</h3>
+        <p class="text-[16px] leading-6 text-muted">Napisz do biura zawodów. Odpowiadamy w dni robocze, na adres, który podasz.</p>
+      </div>
+      <div class="grid gap-7 sm:grid-cols-2 sm:gap-5">
+        <div class="field">
+          <label for="k-name">Imię</label>
+          <input id="k-name" name="name" autocomplete="given-name" required aria-describedby="k-name-err" />
+          <p id="k-name-err" class="err hidden">Wpisz imię.</p>
+        </div>
+        <div class="field">
+          <label for="k-mail">E-mail do odpowiedzi</label>
+          <input id="k-mail" name="email" type="email" autocomplete="email" required aria-describedby="k-mail-err" />
+          <p id="k-mail-err" class="err hidden">Wpisz adres e-mail, np. jan@poczta.pl.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="k-topic">Temat <span class="font-normal normal-case tracking-normal text-muted">(nieobowiązkowy)</span></label>
+        <input id="k-topic" name="topic" placeholder="np. zapisy, sztafeta, wolontariat" data-optional />
+      </div>
+      <div class="field flex-1">
+        <label for="k-msg">Pytanie</label>
+        <textarea id="k-msg" name="message" rows="3" required aria-describedby="k-msg-err"></textarea>
+        <p id="k-msg-err" class="err hidden">Napisz, o co chcesz zapytać.</p>
+      </div>
+      <button type="submit" class="btn btn-primary min-h-14 w-full">Wyślij pytanie <Send aria-hidden="true" stroke-linecap="square" /></button>
+      <p class="flex items-center gap-2 text-[15px] text-muted">
+        <Mail class="size-4 shrink-0" aria-hidden="true" stroke-linecap="square" />
+        <span>Albo od razu: <a class="link-draw font-semibold text-fg" href={`mailto:${event.organizer.email}`}>{event.organizer.email}</a></span>
+      </p>
+    </form>
+
+    {/* Kontakt z biurem: karta na całą szerokość. Z lewej kto i kiedy odbiera, z prawej trzy klikalne kafle. */}
+    <div id="kontakt" class="grid overflow-hidden rounded-sm border border-line bg-raised shadow-soft lg:col-span-2 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+      <div class="grid content-center gap-3 border-b border-line p-6 sm:p-8 lg:border-r lg:border-b-0">
+        <p class="eyebrow">Kontakt</p>
+        <h3 class="font-display text-[36px] leading-[0.95] uppercase sm:text-[40px]">Biuro zawodów</h3>
+        <p class="text-[16px] leading-6 text-muted">Zadzwoń albo napisz w sprawie zapisów, pakietów i sztafet. Telefon odbieramy {o.phoneHours}.</p>
+      </div>
+      <ul class="grid sm:grid-cols-3">
+        {contacts.map(({ Icon, k, v, href, note }, i) => (
+          <li class:list={['border-line', i > 0 && 'border-t sm:border-t-0 sm:border-l']}>
+            <a href={href} class="contact-tile group grid h-full grid-cols-[48px_minmax(0,1fr)] content-start items-start gap-4 p-5 transition-colors hover:bg-surface sm:grid-cols-1 sm:p-7">
+              <span class:list={['grid size-12 place-items-center rounded-sm transition-colors', i === 0 ? 'bg-red-strong text-on-red' : 'bg-fg text-bg group-hover:bg-red-strong group-hover:text-on-red']}><Icon class="size-5" aria-hidden="true" stroke-linecap="square" /></span>
+              <span class="grid gap-1">
+                <span class="font-condensed text-[14px] font-bold tracking-[0.06em] text-muted uppercase">{k}</span>
+                <span class="font-condensed text-[22px] leading-tight font-bold [overflow-wrap:anywhere] tabular-nums xl:text-[24px] group-hover:text-accent">{v}</span>
+                <span class="text-[15px] leading-[22px] text-muted">{note}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      {/* Dane firmy w jednym pasku pod całą kartą: nie wydłużają lewej kolumny, więc kafle nie mają pustego dołu. */}
+      <p class="flex flex-wrap gap-x-5 gap-y-1 border-t border-line bg-surface px-6 py-3 text-[14px] leading-5 text-muted sm:px-8 lg:col-span-2">
+        <span>{o.name}</span><span>{o.address}</span><span>NIP {o.nip}</span>
+      </p>
     </div>
   </div>
 </section>
@@ -61,6 +107,37 @@ const field = 'min-h-12 w-full rounded-sm border-[1.5px] border-line-strong bg-r
     transition: transform 0.15s ease;
   }
   .faq details[open] summary::after { transform: translateY(3px) rotate(-135deg); }
+
+  /* Pola formularza: sama linia pod spodem, przy fokusie rysuje się czerwona kreska. */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-family: var(--font-condensed);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 0;
+    font-size: 18px;
+    color: var(--text);
+    background: linear-gradient(var(--red), var(--red)) no-repeat left bottom / 0% 3px, transparent;
+    border: 0;
+    border-bottom: 2px solid var(--border-strong);
+    border-radius: 0;
+    outline: none;
+    transition: background-size 0.35s var(--ease-out-quint), border-color 0.15s ease;
+  }
+  .field textarea { flex: 1; min-height: 140px; resize: vertical; }
+  @media (min-width: 1024px) { .field textarea { min-height: 88px; } }
+  .field input::placeholder { color: var(--text-muted); opacity: 0.8; }
+  .field input:hover, .field textarea:hover { border-bottom-color: var(--text); }
+  .field input:focus-visible, .field textarea:focus-visible { background-size: 100% 3px, auto; border-bottom-color: transparent; }
+  .field [aria-invalid='true'] { border-bottom-color: var(--accent-text); }
+  .field .err { font-size: 14px; font-weight: 600; color: var(--accent-text); }
+  .field .err.hidden { display: none; }
 </style>
 
 <script>
@@ -70,7 +147,7 @@ const field = 'min-h-12 w-full rounded-sm border-[1.5px] border-line-strong bg-r
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
     let first: HTMLElement | null = null;
-    for (const el of form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea')) {
+    for (const el of form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input:not([data-optional]), textarea')) {
       const bad = !el.value.trim() || (el.type === 'email' && !el.checkValidity());
       el.setAttribute('aria-invalid', String(bad));
       document.getElementById(`${el.id}-err`)?.classList.toggle('hidden', !bad);
@@ -78,7 +155,8 @@ const field = 'min-h-12 w-full rounded-sm border-[1.5px] border-line-strong bg-r
     }
     if (first) return first.focus();
     const data = new FormData(form);
-    const subject = `Pytanie ze strony: ${data.get('name')}`;
+    const topic = String(data.get('topic') ?? '').trim();
+    const subject = `${topic || 'Pytanie'}: wiadomość ze strony od ${data.get('name')}`;
     const body = `${data.get('message')}\n\n${data.get('name')}, ${data.get('email')}`;
     location.href = `mailto:${form.dataset.to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });

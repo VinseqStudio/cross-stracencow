@@ -1,0 +1,88 @@
+---
+// Ściana Płaczu: znak rozpoznawczy trasy. Stromy podbieg polewany wodą, który zamienia się w ścianę błota.
+// Tło w kolorze mokrej ziemi, żeby sekcja odróżniała się od reszty strony.
+import { Picture } from 'astro:assets';
+import { ArrowUpRight } from '@lucide/astro';
+import { photo } from '../lib/photos';
+import { event } from '../data/event';
+
+const facts = [
+  { k: 'Stromo', v: 'Najbardziej stromy podbieg pętli. Większość osób wchodzi na górę na czworakach.' },
+  { k: 'Ślisko', v: 'Zbocze jest polewane wodą, więc ziemia zamienia się w błoto, które trzyma za buty i ręce.' },
+  { k: 'Razem', v: 'Na ścianie ludzie podają sobie ręce. Tu widać, o co chodzi w tym biegu.' },
+  { k: 'Ile razy', v: 'Na 5 km raz, na 10 km na obu pętlach.' },
+];
+const shots = [
+  { rel: '2016/2016-04.jpg', alt: 'Zawodnicy w zielonych koszulkach wdrapują się na rękach po błotnistym podbiegu', cls: 'col-span-2 aspect-[3/2]' },
+  { rel: '2016/2016-12.jpg', alt: 'Zawodnicy wdrapują się po mokrym, stromym zboczu między żółtymi bandami, obok leży wąż z wodą', cls: 'aspect-[4/3]' },
+  { rel: '2016/2016-05.jpg', alt: 'But biegacza zapada się w rozbryzganym błocie na podbiegu', cls: 'aspect-[4/3]' },
+];
+---
+
+<section id="sciana" class="wall defer-render section-pad text-fg" data-theme="dark" aria-labelledby="sciana-title">
+  <div class="wrap grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center lg:gap-12">
+    <div class="grid content-start gap-6">
+      <p class="eyebrow">Atrakcja trasy</p>
+      <h2 id="sciana-title" class="wall-title font-display uppercase">
+        <span class="block">Ściana</span>
+        <span class="block text-red">Płaczu</span>
+      </h2>
+      <p class="lead max-w-[42ch] text-fg/90">
+        Znak firmowy Crossu Straceńców: stromy podbieg polany wodą, który zamienia się w ścianę błota. Nikt nie wchodzi na nią suchy.
+      </p>
+      <dl class="grid border-t border-fg/20">
+        {facts.map((f) => (
+          <div class="grid gap-1 border-b border-fg/20 py-3.5 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-6">
+            <dt class="font-condensed text-[20px] leading-tight font-bold uppercase">{f.k}</dt>
+            <dd class="text-[16px] leading-6 text-fg/80">{f.v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <a href={event.registration.url} target="_blank" rel="noopener" class="btn btn-primary min-h-14 grow px-7 sm:grow-0">
+          Zapisz się i zmierz ze Ścianą <ArrowUpRight aria-hidden="true" stroke-linecap="square" />
+        </a>
+        <a href="/galeria/" class="link-draw font-condensed text-[17px] font-semibold">Więcej błota w galerii</a>
+      </div>
+    </div>
+
+    <div class="wall-shots grid grid-cols-2 gap-2 sm:gap-3">
+      {shots.map((s) => (
+        <div class:list={['wall-shot overflow-hidden rounded-sm', s.cls]}>
+          <Picture src={photo(s.rel)} alt={s.alt} widths={[400, 700, 1000]} sizes="(min-width: 1024px) 60vw, 100vw" formats={['avif', 'webp']} class="size-full object-cover" />
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .wall {
+    --bg: #211a14;
+    --surface: #2b221a;
+    background-color: var(--bg);
+    background-image: radial-gradient(120% 80% at 85% 0%, rgba(122, 86, 52, 0.35) 0%, rgba(33, 26, 20, 0) 60%);
+  }
+  .wall-title { font-size: clamp(64px, 15vw, 96px); line-height: 0.86; }
+  @media (min-width: 1024px) { .wall-title { font-size: clamp(96px, 8.6vw, 136px); } }
+  .wall-shot img { transition: transform 0.6s var(--ease-out-quint); }
+  .wall-shot:hover img { transform: scale(1.03); }
+  :global(.js) .wall .wall-shot { clip-path: inset(100% 0 0 0); }
+  @media (prefers-reduced-motion: reduce) { :global(.js) .wall .wall-shot { clip-path: none; } }
+</style>
+
+<script>
+  // Zdjęcia „wynurzają się” od dołu, jak biegacz wychodzący ze ściany. Jeden raz, gdy 25% galerii jest na ekranie.
+  const wrap = document.querySelector<HTMLElement>('.wall .wall-shots');
+  const shots = [...document.querySelectorAll<HTMLElement>('.wall .wall-shot')];
+  if (wrap && shots.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      shots.forEach((el, i) =>
+        el.animate({ clipPath: ['inset(100% 0 0 0)', 'inset(0% 0 0 0)'] }, { duration: 900, delay: i * 150, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' }),
+      );
+    }, { threshold: 0.25 });
+    io.observe(wrap);
+  }
+</script>

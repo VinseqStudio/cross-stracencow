@@ -1,83 +1,146 @@
 ---
+// Galeria: nagłówek jak w wynikach (kolaż + najnowsze albumy), pasek lat i album na każdy rok.
+// Na start 9 zdjęć z roku, reszta w <template> do kliknięcia. Powiększanie: PhotoSwipe, osobno w każdym roku.
 import { Picture, getImage } from 'astro:assets';
+import { ArrowDown } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
-import { photosOf } from '../../lib/photos';
+import YearNav from '../../components/YearNav.astro';
+import { photo, photosOf } from '../../lib/photos';
 import { editions } from '../../../db/data/editions';
 
-// Wszystkie edycje, od najnowszej. Rok bez zdjęć dostaje pustą ramkę, dopóki nie dojdą pliki.
-const years = await Promise.all(
-  [...editions].reverse().map(async (e) => ({
-    ...e,
-    photos: await Promise.all(
-      photosOf(e.year).map(async ({ img }, i) => {
-        const full = await getImage({ src: img, width: Math.min(img.width, 1600), format: 'webp', quality: 82 });
-        return { img, full, alt: `Cross Straceńców ${e.year}, zdjęcie ${i + 1}` };
-      }),
-    ),
-  })),
-);
+// Pokazujemy tylko lata, które mają zdjęcia. Nowy rok pojawi się sam po dodaniu folderu ze zdjęciami.
+const years = (
+  await Promise.all(
+    [...editions].reverse().map(async (e) => ({
+      year: e.year,
+      photos: await Promise.all(
+        photosOf(e.year).map(async ({ img }, i) => {
+          const full = await getImage({ src: img, width: Math.min(img.width, 1600), format: 'webp', quality: 82 });
+          return { img, full, alt: `Cross Straceńców ${e.year}, zdjęcie ${i + 1}` };
+        }),
+      ),
+    })),
+  )
+).filter((y) => y.photos.length);
 const count = years.reduce((s, y) => s + y.photos.length, 0);
+// Na start 9 zdjęć z roku (duże + 8 małych wypełnia siatkę bez dziur), reszta dopiero po kliknięciu.
+const SHOWN = 9;
+
+// Kolaż w tle nagłówka: ten sam układ co w wynikach (3 kolumny na telefonie, 5 na komputerze).
+const collage = [
+  { rel: '2022/2022-06.jpg', cls: 'col-span-2 row-span-2' },
+  { rel: '2025/2025-05.jpg', cls: '' },
+  { rel: '2019/2019-09.jpg', cls: '' },
+  { rel: '2023/2023-14.jpg', cls: 'hidden lg:block' },
+  { rel: '2024/2024-13.jpg', cls: 'hidden lg:block' },
+  { rel: '2018/2018-10.jpg', cls: 'hidden lg:block' },
+  { rel: '2025/2025-14.jpg', cls: 'hidden lg:block' },
+];
+const first = years.at(-1)!.year;
+// Po prawej, w miejscu zwycięzców z wyników: trzy najnowsze albumy.
+const latest = years.slice(0, 3);
+// Dane strukturalne: okruszki (Google pokazuje ścieżkę w wynikach) i opis kolekcji.
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Cross Straceńców', item: new URL('/', Astro.site).href },
+      { '@type': 'ListItem', position: 2, name: 'Galeria', item: new URL('/galeria/', Astro.site).href },
+    ],
+  },
+  { '@context': 'https://schema.org', '@type': 'ImageGallery', name: 'Galeria', url: new URL('/galeria/', Astro.site).href, description: `Zdjęcia z Crossu Straceńców w Głogowie z ${years.length} lat.`, inLanguage: 'pl-PL' },
+];
 ---
 
-<Base
-  title="Galeria"
-  description={`Zdjęcia z ${years.length} edycji Crossu Straceńców w Głogowie, od 2011 roku: rowy z wodą, błoto, meta i biegi dzieci.`}
-  current="galeria"
->
-  <section class="bg-bg pt-12 pb-8 lg:pt-20 lg:pb-12" aria-labelledby="galeria-h1">
-    <div class="wrap grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
-      <h1 id="galeria-h1" class="display-xl">Galeria</h1>
-      <p class="lead max-w-[44ch] text-muted">{years.length} edycji, {count} zdjęć. Dotknij zdjęcia, żeby je powiększyć.</p>
+<Base title="Galeria" description={`${count} zdjęć z Crossu Straceńców w Głogowie z ${years.length} lat: rowy z wodą, błoto, meta i biegi dzieci.`} current="galeria" jsonLd={jsonLd}>
+  <section class="gallery-hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="galeria-h1">
+    {/* Kafle ukryte na telefonie (hidden lg:block) mają loading="lazy": przeglądarka nie pobiera ich, dopóki są niewidoczne. */}
+    <div class="absolute inset-0 -z-10 grid auto-rows-fr grid-cols-3 gap-1 lg:grid-cols-5" aria-hidden="true">
+      {collage.map((c, i) => (
+        <div class:list={['collage-tile overflow-hidden', c.cls]} style={`--i:${i}`}>
+          <Picture src={photo(c.rel)} alt="" widths={[360, 600, 900]} sizes="(min-width: 1024px) 40vw, 66vw" formats={['avif', 'webp']} loading={c.cls.includes('hidden') ? 'lazy' : 'eager'} fetchpriority={i === 0 ? 'high' : 'auto'} class="size-full object-cover saturate-[.8]" />
+        </div>
+      ))}
+      <div class="absolute inset-0 bg-[linear-gradient(0deg,#121211_0%,rgba(18,18,17,0.78)_40%,rgba(18,18,17,0.45)_100%)]"></div>
+    </div>
+    <div class="wrap grid gap-6 pt-10 pb-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-end lg:gap-6 lg:pt-28 lg:pb-16">
+      <div class="grid gap-3 lg:gap-5">
+        <p class="eyebrow" data-enter style="--i:0">Archiwum, {first}–{years[0].year}</p>
+        <h1 id="galeria-h1" class="font-display text-[clamp(72px,18vw,160px)] leading-[0.8] uppercase lg:text-[min(11vw,172px)]" data-enter style="--i:1">Galeria</h1>
+        <span class="trail hidden w-40 lg:block" data-enter style="--i:2"></span>
+        <p class="max-w-[36ch] text-[17px] leading-[26px] text-fg/85 lg:text-[20px] lg:leading-[30px]" data-enter style="--i:3">{count} zdjęć z {years.length} lat na torze: rowy z wodą, błoto, Ściana Płaczu i meta. Każde zdjęcie powiększysz jednym kliknięciem.</p>
+      </div>
+      <div class="grid gap-3" data-enter style="--i:4">
+        <p class="font-condensed text-[15px] font-bold tracking-[0.06em] text-accent uppercase">Najnowsze albumy</p>
+        <ul class="grid gap-px overflow-hidden rounded-sm bg-fg/15 sm:grid-cols-3">
+          {latest.map((y) => (
+            <li class="bg-bg/80 backdrop-blur-sm">
+              <a href={`#rok-${y.year}`} class="group grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-4 px-4 py-3 sm:grid-cols-1 sm:items-start sm:gap-4 sm:p-5">
+                <span class="photo-zoom aspect-[3/2] overflow-hidden rounded-sm sm:aspect-[16/10]">
+                  <Picture src={y.photos[0].img} alt="" widths={[160, 320, 480]} sizes="(min-width: 640px) 240px, 64px" formats={['avif', 'webp']} class="size-full object-cover" />
+                </span>
+                <span class="grid gap-0.5">
+                  <span class="font-display text-[24px] leading-none tabular-nums sm:text-[36px]">{y.year}</span>
+                  <span class="text-[14px] leading-5 font-semibold sm:text-[15px]">{y.photos.length} zdjęć</span>
+                </span>
+                <ArrowDown class="size-5 text-fg/70 transition-transform group-hover:translate-y-0.5 sm:hidden" aria-hidden="true" stroke-linecap="square" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   </section>
 
-  <nav aria-label="Lata" class="sticky top-16 z-40 border-y border-line bg-bg/95 backdrop-blur-sm lg:top-[72px]">
-    <ul class="wrap flex gap-2 overflow-x-auto py-3 [scrollbar-width:none]">
-      {years.map((y) => (
-        <li class="shrink-0"><a href={`#rok-${y.year}`} class="inline-flex min-h-11 items-center rounded-sm border border-line-strong px-4 font-condensed text-lg font-semibold tabular-nums hover:border-fg">{y.year}</a></li>
-      ))}
-    </ul>
-  </nav>
+  <YearNav label="Zdjęcia z lat" years={years.map((y) => ({ year: y.year, href: `#rok-${y.year}` }))} />
 
   <div class="pswp-gallery bg-bg">
     {years.map((y) => (
       <section id={`rok-${y.year}`} class="scroll-mt-36 border-b border-line py-12 lg:py-16" aria-labelledby={`rok-${y.year}-h`}>
         <div class="wrap grid gap-6">
-          <h2 id={`rok-${y.year}-h`} class="display-lg">
-            {y.year} <span class="text-muted">{y.number} edycja</span>
-          </h2>
-          {y.photos.length ? (
-            <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
-              {y.photos.map((p) => (
-                <li>
-                  <a
-                    href={p.full.src}
-                    data-pswp-width={p.full.attributes.width}
-                    data-pswp-height={p.full.attributes.height}
-                    class="photo-zoom block aspect-[3/2]"
-                    aria-label={`Powiększ: ${p.alt}`}
-                  >
-                    <Picture
-                      src={p.img}
-                      alt={p.alt}
-                      widths={[300, 480, 640]}
-                      sizes="(min-width: 1024px) 310px, (min-width: 640px) 33vw, 50vw"
-                      formats={['avif', 'webp']}
-                      class="size-full object-cover"
-                    />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-              <div class="col-span-2 grid aspect-[3/2] place-items-center bg-surface sm:aspect-[3/1] sm:col-span-4">
-                <p class="text-center">
-                  <span class="block font-display text-[clamp(72px,12vw,160px)] leading-none text-line-strong">{y.number}</span>
-                  <span class="mt-2 block text-[15px] text-muted">Zdjęcia z tej edycji pojawią się wkrótce.</span>
-                </p>
-              </div>
-            </div>
+          <div class="flex items-baseline justify-between gap-4">
+            <h2 id={`rok-${y.year}-h`} class="font-display text-[clamp(56px,8vw,112px)] leading-[0.85]">{y.year}</h2>
+            <span class="font-condensed text-lg font-bold text-muted">{y.photos.length} zdjęć</span>
+          </div>
+          <ul class="year-grid grid grid-flow-dense grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+            {y.photos.slice(0, SHOWN).map((p, i) => (
+              <li class:list={[i === 0 && 'col-span-2 row-span-2']}>
+                <a
+                  href={p.full.src}
+                  data-pswp-width={p.full.attributes.width}
+                  data-pswp-height={p.full.attributes.height}
+                  class="photo-zoom block aspect-[3/2] h-full"
+                  aria-label={`Powiększ: ${p.alt}`}
+                >
+                  <Picture
+                    src={p.img}
+                    alt={p.alt}
+                    widths={i === 0 ? [480, 800, 1200] : [300, 480, 640]}
+                    sizes={i === 0 ? '(min-width: 1024px) 620px, 100vw' : '(min-width: 1024px) 310px, (min-width: 640px) 33vw, 50vw'}
+                    formats={['avif', 'webp']}
+                    class="size-full object-cover"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+          {y.photos.length > SHOWN && (
+            <>
+              {/* Pozostałe zdjęcia czekają w <template>: przeglądarka nie pobiera ich, dopóki ktoś nie kliknie. */}
+              <template class="year-more">
+                {y.photos.slice(SHOWN).map((p) => (
+                  <li>
+                    <a href={p.full.src} data-pswp-width={p.full.attributes.width} data-pswp-height={p.full.attributes.height} class="photo-zoom block aspect-[3/2] h-full" aria-label={`Powiększ: ${p.alt}`}>
+                      <Picture src={p.img} alt={p.alt} widths={[300, 480, 640]} sizes="(min-width: 1024px) 310px, (min-width: 640px) 33vw, 50vw" formats={['avif', 'webp']} loading="lazy" class="size-full object-cover" />
+                    </a>
+                  </li>
+                ))}
+              </template>
+              <button type="button" class="more-btn btn btn-outline justify-self-start" data-more>
+                Pokaż wszystkie zdjęcia z {y.year} <span class="font-semibold tabular-nums opacity-60">+{y.photos.length - SHOWN}</span>
+              </button>
+            </>
           )}
         </div>
       </section>
@@ -85,13 +148,39 @@ const count = years.reduce((s, y) => s + y.photos.length, 0);
   </div>
 </Base>
 
+<style>
+  /* Tekst nagłówka rusza razem z kafelkami, nie po nich: szybciej widać tytuł (LCP). */
+  .gallery-hero { --enter-start: 0.1s; }
+</style>
+
+
 <script>
   import PhotoSwipeLightbox from 'photoswipe/lightbox';
   import 'photoswipe/style.css';
 
-  // Każdy rok to osobny album: strzałki przechodzą tylko po zdjęciach z tej samej edycji.
+  // Wejście nagłówka (kafle kolażu po kolei, potem tekst) jest w CSS: global.css, [data-enter] i .collage-tile.
+
+  // „Pokaż wszystkie”: dokleja resztę zdjęć roku z <template> i chowa przycisk.
+  document.querySelectorAll<HTMLButtonElement>('[data-more]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.parentElement!;
+      const tpl = wrap.querySelector<HTMLTemplateElement>('template.year-more')!;
+      const grid = wrap.querySelector('.year-grid')!;
+      const added = [...tpl.content.children] as HTMLElement[];
+      grid.append(tpl.content.cloneNode(true));
+      btn.remove();
+      const fresh = [...grid.children].slice(-added.length) as HTMLElement[];
+      fresh[0]?.querySelector('a')?.focus({ preventScroll: true });
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        fresh.forEach((el, i) =>
+          el.animate({ opacity: [0, 1], transform: ['translateY(16px)', 'translateY(0)'] }, { duration: 500, delay: i * 40, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'backwards' }),
+        );
+      }
+    });
+  });
+
+  // Każdy rok to osobny album: strzałki przechodzą tylko po zdjęciach z tego roku.
   document.querySelectorAll<HTMLElement>('.pswp-gallery section').forEach((section) => {
-    if (!section.querySelector('a[data-pswp-width]')) return;
     const lightbox = new PhotoSwipeLightbox({
       gallery: section,
       children: 'a[data-pswp-width]',

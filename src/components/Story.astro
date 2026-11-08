@@ -15,57 +15,56 @@ const timeline = [
 ];
 ---
 
-<section id="historia" class="story grain section-pad bg-bg text-fg" data-theme="dark" aria-labelledby="historia-title">
-  <div class="wrap grid gap-12 lg:gap-16">
-    <div class="grid gap-8">
-      <h2 id="historia-title" class="display-lg">Dlaczego „Straceńców”?</h2>
-      <figure class="grid gap-5">
-        <blockquote class="statement font-display text-[clamp(36px,6vw,84px)] leading-[1.02] uppercase">
-          <p class="max-w-[30ch]">
-            <span class="text-red" aria-hidden="true">„</span>{words.map((w, i) => (
-              <>{i > 0 && ' '}<span class:list={['word', w === accent && 'is-accent']}>{w}</span></>
-            ))}<span class="text-red" aria-hidden="true">”</span>
-          </p>
-        </blockquote>
-        <figcaption class="flex flex-wrap gap-x-2 text-[15px] leading-[22px]">
-          <span class="font-bold">Jerzy Górski</span><span class="text-muted">organizator Crossu Straceńców</span>
-        </figcaption>
-      </figure>
-    </div>
-
-    <div class="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6">
-      <div class="grid content-between gap-10">
-        <p class="max-w-[52ch] text-fg/85">
+<section id="historia" class="story defer-render grain section-pad bg-bg text-fg" data-theme="dark" aria-labelledby="historia-title">
+  <div class="wrap grid gap-14 lg:gap-20">
+    <div class="grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-6">
+      <div class="grid content-start gap-8">
+        <h2 id="historia-title" class="display-lg">Dlaczego „Straceńców”?</h2>
+        <figure class="grid gap-5">
+          <blockquote class="statement font-display text-[clamp(36px,4.8vw,68px)] leading-[1.02] uppercase">
+            <p>
+              <span class="text-red" aria-hidden="true">„</span>{words.map((w, i) => (
+                <>{i > 0 && ' '}<span class:list={['word', w === accent && 'is-accent']}>{w}</span></>
+              ))}<span class="text-red" aria-hidden="true">”</span>
+            </p>
+          </blockquote>
+          <figcaption class="flex flex-wrap gap-x-2 text-[15px] leading-[22px]">
+            <span class="font-bold">Jerzy Górski</span><span class="text-muted">organizator Crossu Straceńców</span>
+          </figcaption>
+        </figure>
+        <p class="max-w-[56ch] text-fg/85">
           Straceniec to ktoś spisany na straty. I ktoś, kto rzuca się na to, co wygląda na niemożliwe. Ten bieg zamienia
           pierwsze znaczenie w drugie: startują tu zawodnicy klubów, rodziny, szkoły i podopieczni Monaru, którzy walczą
           o swoje mistrzostwa Polski.
         </p>
-        <ol class="timeline grid gap-6">
-          {timeline.map((t) => (
-            <li class="relative pl-12" data-highlight={t.highlight ? 'true' : undefined}>
-              <span class="block font-display text-[36px] leading-none tabular-nums">{t.year}</span>
-              <h3 class="mt-2 font-condensed text-[22px] leading-[1.15] font-bold">{t.title}</h3>
-              <p class="mt-1 max-w-[48ch] text-[15px] leading-[22px] text-muted">{t.body}</p>
-            </li>
-          ))}
-        </ol>
       </div>
-      <div class="min-h-[280px] overflow-hidden lg:min-h-0">
+      <div class="aspect-[4/5] overflow-hidden rounded-sm sm:aspect-[3/2] lg:aspect-auto lg:min-h-[560px]">
         <Picture
           src={photo('2025/2025-13.jpg')}
-          alt="Zawodnik w koszulce z napisem Monar na mecie, obok sędzia w zielonej koszulce"
-          widths={[480, 720, 960, 1200]}
-          sizes="(min-width: 1024px) 720px, 100vw"
+          alt="Zawodnik w koszulce z napisem MONAR pokazuje medal na scenie przed banerem Crossu Straceńców"
+          widths={[480, 720, 960]}
+          sizes="(min-width: 1024px) 520px, 100vw"
           formats={['avif', 'webp']}
-          class="size-full object-cover"
+          class="size-full object-cover object-[46%_40%]"
         />
       </div>
     </div>
+
+    <ol class="timeline grid gap-8 md:grid-cols-3 md:gap-6">
+      {timeline.map((t) => (
+        <li class="relative pl-12 md:pt-12 md:pl-0" data-highlight={t.highlight ? 'true' : undefined}>
+          <span class="block font-display text-[44px] leading-none tabular-nums">{t.year}</span>
+          <h3 class="mt-2 font-condensed text-[22px] leading-[1.15] font-bold">{t.title}</h3>
+          <p class="mt-1 max-w-[40ch] text-[15px] leading-[22px] text-muted">{t.body}</p>
+        </li>
+      ))}
+    </ol>
   </div>
 </section>
 
 <style>
-  /* Oś czasu: przerywana czerwona linia trasy i romby jak w systemie marki. */
+  /* Oś czasu: przerywana czerwona linia trasy i romby jak w systemie marki.
+     Telefon: pionowo z lewej. Od 768px: poziomo nad latami. */
   .timeline { position: relative; }
   .timeline::before {
     content: '';
@@ -89,6 +88,20 @@ const timeline = [
     transform: rotate(45deg);
   }
   .timeline li[data-highlight='true']::before { background: var(--red); border-color: var(--red); }
+  @media (min-width: 768px) {
+    .timeline::before {
+      left: 0;
+      right: 0;
+      top: 6px;
+      bottom: auto;
+      width: auto;
+      height: 5px;
+      background-image: linear-gradient(90deg, var(--red) 0 18px, transparent 18px 100%);
+      background-size: 32px 100%;
+      transform: skewX(-12deg);
+    }
+    .timeline li::before { top: 1px; left: 0; }
+  }
 
   .statement .word { --o: 1; color: color-mix(in srgb, var(--text) calc(34% + 66% * var(--o)), var(--bg)); }
   .statement .word.is-accent { color: color-mix(in srgb, var(--red) calc(34% + 66% * var(--o)), var(--bg)); }
@@ -99,19 +112,25 @@ const timeline = [
 </style>
 
 <script>
-  import { scroll } from 'motion';
-
   // Słowa rozjaśniają się płynnie, jedno po drugim, gdy cytat przechodzi przez ekran; w górę gasną.
+  // Start: góra cytatu na 85% wysokości ekranu. Koniec: dół cytatu na połowie ekranu.
+  // Liczone z getBoundingClientRect, bo na komputerze strona jest skalowana (zoom) i gotowe liczniki przewijania się mylą.
   const words = [...document.querySelectorAll<HTMLElement>('.statement .word')];
   const block = document.querySelector<HTMLElement>('.statement');
   if (block && words.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const n = words.length;
-    scroll(
-      (p: number) => {
-        const t = p * (n + 1.5);
-        words.forEach((w, i) => w.style.setProperty('--o', String(Math.min(1, Math.max(0, (t - i) / 1.5)))));
-      },
-      { target: block, offset: ['start 0.92', 'end 0.3'] },
-    );
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const r = block.getBoundingClientRect();
+      const vh = innerHeight;
+      const p = Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (vh * 0.35 + r.height)));
+      const t = p * (n + 1);
+      words.forEach((w, i) => w.style.setProperty('--o', String(Math.min(1, Math.max(0, t - i)))));
+    };
+    const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
+    addEventListener('scroll', queue, { passive: true });
+    addEventListener('resize', queue);
+    update();
   }
 </script>

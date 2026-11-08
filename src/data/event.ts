@@ -7,8 +7,22 @@ export const event = {
   // Termin XVII edycji: założenie z systemu marki, do potwierdzenia przez organizatora.
   dates: { label: '24 i 25 kwietnia 2027', start: '2027-04-24T16:00:00+02:00', end: '2027-04-25T14:00:00+02:00', assumed: true },
   venue: { name: 'Tor motocrossowy Górków', district: 'Górków', city: 'Głogów' },
-  registration: { open: false },
-  organizer: { name: 'Sport Górski Jerzy Górski', email: 'biuro@sport-gorski.pl' },
+  // Zapisy prowadzi zewnętrzna firma. Podmień `url` i `provider` na prawdziwe, gdy organizator je poda.
+  registration: { open: true, url: 'https://zapisy.example/cross-stracencow-2027', provider: '', assumed: true },
+  // Kontakt ze stron crossstracencow.pl i sport-gorski.pl (stan z listopada 2026).
+  // Uwaga: crossstracencow.pl podaje adres Piasta Kołodzieja 12/5, 67-200 Głogów, a sport-gorski.pl ul. Sikorskiego 48.
+  // Na stronie jest adres z sport-gorski.pl (tam też NIP). Do potwierdzenia przez organizatora.
+  organizer: {
+    name: 'Sport Górski Jerzy Górski',
+    person: 'Jerzy Górski',
+    email: 'biuro@sport-gorski.pl',
+    phone: '504 225 878',
+    phoneHours: 'pn–pt, 9:00–14:00',
+    personPhone: '504 157 030',
+    address: 'ul. gen. Władysława Sikorskiego 48, Głogów',
+    nip: '693-134-18-87',
+    assumed: true,
+  },
   facebook: 'https://www.facebook.com/Cross-Stracencow-376557065776815/',
   feeFrom: '30 zł',
 };
@@ -81,11 +95,12 @@ export const distances: Distance[] = [
   {
     id: 'junior',
     name: 'Cross Junior',
-    distance: '1,1 km',
+    distance: '3 biegi',
     tier: 'copper',
     difficulty: 1,
-    description: 'Dzieci do 13 lat biegną 950 m albo 1,1 km. Najmłodsi do 6 lat biegną 450 m razem z rodzicem.',
+    description: 'Dystans według wieku. Najmłodsi, do 6 lat, biegną razem z rodzicem.',
     facts: [
+      { label: 'Dystanse', value: '450 m, 950 m, 1,1 km' },
       { label: 'Wiek', value: 'do 13 lat' },
       { label: 'Start', value: 'niedziela, od 12:00' },
     ],
@@ -100,7 +115,7 @@ export const distances: Distance[] = [
 export const chapters = [
   { title: 'Start na torze motocrossowym', body: 'Pętla prowadzi po torze motocrossowym w Górkowie: piach, trawa i naturalne przeszkody.', photo: '2022/2022-03.jpg', alt: 'Sznur biegaczy na piaszczystej ścieżce pod górę między krzakami' },
   { title: 'Rów z wodą po kolana', body: 'Na trasie są rowy z wodą i błotem. Przejdziesz je także marszem, nikt nie ocenia stylu.', photo: '2022/2022-06.jpg', alt: 'Zawodnicy brodzą przez rów z brązową wodą między czerwonymi bandami' },
-  { title: 'Piaszczyste podbiegi i strome zbiegi', body: 'Ziemia trzyma za buty. Kolce i korki są zabronione, wystarczy dobry protektor.', photo: '2022/2022-07.jpg', alt: 'Zawodnik podpiera się ręką, wychodząc z błotnistej kałuży' },
+  { title: 'Ściana Płaczu', body: 'Stromy podbieg polany wodą. Na górę wchodzisz w błocie, często na rękach i kolanach.', photo: '2019/2019-08.jpg', alt: 'Zawodnicy pomagają sobie nawzajem wejść po błotnistym podbiegu' },
   { title: 'Meta i medal Finisher', body: 'Na mecie każdy dostaje medal Finisher i posiłek. Tu nikt nie przegrywa.', photo: '2022/2022-12.jpg', alt: 'Zawodnik z uniesioną ręką wbiega na niebieski dywan mety' },
 ];
 
@@ -128,15 +143,14 @@ export const faq = [
   { q: 'Czy dam radę, jeśli nigdy nie biegałem w terenie?', a: 'Tak. Wybierz 5 km: to jedna pętla, a przeszkody pokonasz także marszem.' },
   { q: 'W jakich butach biegać?', a: 'W butach z protektorem, najlepiej trailowych. Buty z kolcami lub korkami są zabronione i oznaczają dyskwalifikację.' },
   { q: 'Gdzie i kiedy odebrać pakiet startowy?', a: 'W biurze zawodów, w namiocie przy torze: w sobotę od 14:00 na 5 i 10 km, w niedzielę od 9:00 dla sztafet i Cross Junior. Weź kod QR z zapisu i dokument tożsamości.' },
-  { q: 'Czy na trasie jest woda?', a: 'Tak. Na punktach odżywiania czekają woda, napój izotoniczny i owoce.' },
-  { q: 'Jakie są klasyfikacje dodatkowe?', a: 'Na 5 i 10 km prowadzimy Mistrzostwa Głogowa i Mistrzostwa Polski Stowarzyszenia MONAR. Zaznacz je przy zapisie, a przy MONAR podaj nazwę ośrodka.' },
   { q: 'Co jest w pakiecie startowym?', a: 'Numer z chipem, posiłek po biegu, woda i izotonik na trasie, medal Finisher, opieka medyczna, szatnia z depozytem i ubezpieczenie.' },
   { q: 'Czy mogę pobiec razem z dzieckiem?', a: 'W Cross Junior tak: dzieci do 6 lat biegną 450 m z rodzicem, starsze mogą mieć opiekuna na trasie.' },
   { q: 'Czy można zmienić dystans albo odzyskać opłatę?', a: 'Nie. Regulamin nie przewiduje zmiany dystansu ani zwrotu opłaty startowej.' },
   { q: 'Skąd nazwa „Straceńców”?', a: 'Bieg powstał z myślą o ludziach, których ktoś kiedyś spisał na straty, także o podopiecznych Monaru. Na mecie okazuje się, że nikt tu nie jest stracony.' },
 ];
 
-// Organizatorzy i partnerzy z edycji 2026. Logotypy dojdą jako pliki, na razie nazwy.
+// Organizatorzy i partnerzy z edycji 2026. Obecnie nie są wyświetlani (w stopce jest karta „Miejsce startu”);
+// lista czeka na pasek z logotypami, gdy organizator przekaże pliki.
 export const partners = [
   'KGHM Polska Miedź',
   'Gmina Miejska Głogów',

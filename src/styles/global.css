@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* ---------- Fonty (własny hosting, public/fonts) ----------
+   Jeden plik na krój i grubość, przycięty do znaków łacińskich z polskimi literami i typografią
+   (cudzysłowy „”, półpauza, wielokropek, strzałki, €). Pięć plików, razem ok. 106 KB.
+   Źródło: Google Fonts (licencja SIL OFL 1.1). Jak je odtworzyć: README.md, sekcja „Fonty”. */
+@font-face { font-family: "Anton"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/anton-400.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/barlow-400.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/barlow-600.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/barlow-condensed-600.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/barlow-condensed-700.woff2") format("woff2"); }
+
 /* Cross Straceńców: tokeny z systemu marki (tokens.json v2). Jasny motyw domyślny,
    ciemny tylko w sekcjach z data-theme="dark" (hero, historia, stopka). */
 :root,
@@ -81,6 +91,20 @@
   --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
   --radius-sm: 2px;
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Skala na komputerze ----------
+   Od 1024px strona jest skalowana jak zoom w przeglądarce. Wartość --page-zoom liczy skrypt w <head> (Base.astro)
+   z wymiarów okna; poniżej są tylko wartości awaryjne bez JS.
+   Skalujemy dzieci <body>, nie <html>, żeby lightbox galerii (.pswp, doklejany do body) zostawał na pełnym ekranie.
+   Jednostki svh w skalowanych elementach też się skalują, więc wysokości „na cały ekran” dzielimy przez --page-zoom. */
+:root { --page-zoom: 1; }
+@media (width >= 1024px) {
+  :root { --page-zoom: 0.9; }
+  body > :not(.pswp) { zoom: var(--page-zoom); }
+}
+@media (width >= 1440px) and (height >= 800px) {
+  :root { --page-zoom: 1; }
 }
 
 /* ---------- Baza ---------- */
@@ -236,11 +260,34 @@
   }
 }
 
+/* Sekcja poniżej pierwszego ekranu: przeglądarka układa i maluje ją dopiero, gdy zbliża się do ekranu.
+   Mniej pracy przy wczytaniu strony (szybsze LCP na słabych telefonach). Nie używać w sekcjach, których
+   skrypty mierzą wysokość przy starcie (dystanse, trasa) ani tam, gdzie coś ma wystawać poza sekcję. */
+@utility defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
 /* Zdjęcie w ramce: przybliżenie 1.03 przy najechaniu na link. */
 @utility photo-zoom {
   overflow: hidden;
   & img { transition: transform 0.5s var(--ease-out-quint); }
   a:hover & img, &:is(a):hover img { transform: scale(1.03); }
+}
+
+/* ---------- Wejście nagłówków stron ----------
+   Tylko CSS, bez JS: animacja rusza z pierwszą klatką, więc tytuł nie czeka na skrypty (szybsze FCP i LCP).
+   [data-line]   linia tytułu wysuwa się spod maski (rodzic ma overflow: hidden),
+   [data-enter]  element wjeżdża od dołu, startuje po --enter-start,
+   .collage-tile kafel kolażu w tle pojawia się z lekkim przybliżeniem.
+   Kolejność ustawia --i w atrybucie style (0, 1, 2…). */
+@keyframes enter-line { from { transform: translateY(105%); } }
+@keyframes enter-rise { from { opacity: 0; transform: translateY(24px); } }
+@keyframes enter-tile { from { opacity: 0; transform: scale(1.06); } }
+@media (prefers-reduced-motion: no-preference) {
+  [data-line] { animation: enter-line 0.9s var(--ease-out-quint) both; animation-delay: calc(var(--i, 0) * 120ms); }
+  [data-enter] { animation: enter-rise 0.7s var(--ease-out-quint) both; animation-delay: calc(var(--enter-start, 0.3s) + var(--i, 0) * 80ms); }
+  .collage-tile { animation: enter-tile 0.8s var(--ease-out-quint) both; animation-delay: calc(var(--i, 0) * 70ms); }
 }
 
 @media (prefers-reduced-motion: reduce) {

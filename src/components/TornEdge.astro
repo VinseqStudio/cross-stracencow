@@ -1,6 +1,8 @@
 ---
 // Postrzępiona krawędź plakatu. Maks. dwie na stronę, tylko na przejściu jasny / ciemny.
 // Zachodzi po 1px na sekcje obok, żeby między nimi nie było jasnej szczeliny.
+// Tło pod spodem ma u dołu kolor następnej sekcji: przy skalowaniu strony (zoom) dolna krawędź SVG
+// wypada na ułamku piksela i inaczej prześwitywałaby cienka kreska w kolorze poprzedniej sekcji.
 interface Props { from: string; to: string; seed?: number }
 const { from, to, seed = 7 } = Astro.props;
 
@@ -11,7 +13,7 @@ for (let i = 1; i <= 120; i++) pts.push(`L${((i / 120) * 1000).toFixed(1)},${(4 
 pts.push('L1000,20Z');
 ---
 
-<div aria-hidden="true" class="relative z-[1] -my-px block h-5 w-full overflow-hidden leading-none" style={`background:${from}`}>
+<div aria-hidden="true" class="relative z-[1] -my-px block h-5 w-full overflow-hidden leading-none" style={`background:linear-gradient(${from} 0 78%, ${to} 78% 100%)`}>
   <svg viewBox="0 0 1000 20" preserveAspectRatio="none" class="absolute inset-0 block size-full">
     <path d={pts.join(' ')} fill={to} />
   </svg>

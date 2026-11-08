@@ -1,0 +1,33 @@
+---
+// Przesuwany pasek lat: ten sam w galerii i w wynikach, żeby lata wybierało się wszędzie tak samo.
+// `sticky` przykleja go pod nagłówkiem strony; `current` podświetla rok, na którym jesteś.
+interface Props {
+  years: { year: number; href: string }[];
+  label?: string;
+  current?: number;
+  sticky?: boolean;
+}
+const { years, label = 'Lata', current, sticky = true } = Astro.props;
+---
+
+<nav aria-label={label} class:list={['year-nav z-40 border-b border-line bg-bg/95 backdrop-blur-sm', sticky && 'sticky top-16 lg:top-[72px]']}>
+  <ul class="wrap flex gap-2 overflow-x-auto py-3 [scrollbar-width:none]">
+    {years.map((y) => (
+      <li class="shrink-0">
+        <a
+          href={y.href}
+          aria-current={y.year === current ? 'page' : undefined}
+          class="inline-flex min-h-11 items-center rounded-sm border border-line-strong px-4 font-condensed text-lg font-semibold tabular-nums transition-colors hover:border-fg hover:bg-fg hover:text-bg aria-[current=page]:border-fg aria-[current=page]:bg-fg aria-[current=page]:text-bg"
+        >{y.year}</a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<script>
+  // Bieżący rok wjeżdża w widok paska, gdy lat jest więcej niż mieści ekran.
+  document.querySelectorAll<HTMLElement>('.year-nav [aria-current="page"]').forEach((a) => {
+    const ul = a.closest('ul')!;
+    ul.scrollLeft = a.offsetLeft - ul.clientWidth / 2 + a.offsetWidth / 2;
+  });
+</script>

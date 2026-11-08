@@ -1,52 +1,89 @@
 ---
+// Wyniki jednej edycji: nagłówek ze zwycięzcami, pasek lat, przełącznik biegów, wyszukiwarka i pełne tabele.
+// Strony powstają dla każdego roku z wynikami w Astro DB. Ten sam rok jako JSON: /wyniki/<rok>.json.
+import { Picture } from 'astro:assets';
 import { ArrowLeft, Search } from '@lucide/astro';
-import { db, Edition, Result, eq, asc } from 'astro:db';
+import { db, Edition, eq } from 'astro:db';
 import Base from '../../layouts/Base.astro';
+import YearNav from '../../components/YearNav.astro';
+import { photo } from '../../lib/photos';
+import { resultsOf, winnersOf, yearsWithResults, yearPhoto } from '../../lib/results';
 
 export async function getStaticPaths() {
-  const years = await db.select({ year: Edition.year }).from(Edition);
-  return years.map(({ year }) => ({ params: { year: String(year) } }));
+  return (await yearsWithResults()).map(({ year }) => ({ params: { year: String(year) } }));
 }
 
 const year = Number(Astro.params.year);
 const [edition] = await db.select().from(Edition).where(eq(Edition.year, year));
-const rows = await db.select().from(Result).where(eq(Result.year, year)).orderBy(asc(Result.race), asc(Result.place));
-const km = (r: string) => Number(r.match(/(\d+)\s*km/)?.[1] ?? 0);
-const races = [...new Set(rows.map((r) => r.race))].sort((a, b) => km(b) - km(a) || a.localeCompare(b, 'pl'));
+const { rows, races } = await resultsOf(year);
+const winners = await winnersOf(year);
 const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const date = edition.date
   ? new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(edition.date))
   : null;
+const bg = yearPhoto[year];
+const allYears = await yearsWithResults();
 
 const site = Astro.site!.href.replace(/\/$/, '');
-const jsonLd = {
+// Dane strukturalne: tabela wyników jako zbiór danych (z plikiem JSON do pobrania) i okruszki.
+const jsonLd = [{
   '@context': 'https://schema.org',
   '@type': 'Dataset',
-  name: `Wyniki ${edition.number} Crossu Straceńców ${year}`,
-  description: `Wyniki ${edition.number} edycji biegu na torze motocrossowym w Głogowie.`,
+  name: `Wyniki Crossu Straceńców ${year}`,
+  description: `Wyniki biegów ${races.join(', ')} na torze motocrossowym w Głogowie.`,
   temporalCoverage: edition.date ?? String(year),
   distribution: { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${site}/wyniki/${year}.json` },
-};
+  creator: { '@type': 'Organization', name: 'Sport Górski Jerzy Górski' },
+}, {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Cross Straceńców', item: `${site}/` },
+    { '@type': 'ListItem', position: 2, name: 'Wyniki', item: `${site}/wyniki/` },
+    { '@type': 'ListItem', position: 3, name: String(year), item: `${site}/wyniki/${year}/` },
+  ],
+}];
 ---
 
 <Base
   title={`Wyniki ${year}`}
-  description={rows.length ? `Wyniki ${edition.number} Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} osób na mecie.` : `Wyniki ${edition.number} Crossu Straceńców w Głogowie (${year}).`}
+  description={`Wyniki Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} osób na mecie.`}
   current="wyniki"
   jsonLd={jsonLd}
 >
-  <section class="bg-bg pt-12 pb-8 lg:pt-20 lg:pb-10" aria-labelledby="rok-h1">
-    <div class="wrap grid gap-6">
-      <p class="eyebrow"><a href="/wyniki/" class="link-draw">Wyniki</a></p>
-      <h1 id="rok-h1" class="display-xl">{year}</h1>
-      <p class="lead max-w-[56ch] text-muted">
-        {edition.number} edycja{date ? `, ${date}` : ''}.{rows.length ? ` ${rows.length} osób na mecie.` : ''}
-      </p>
+  <section class="year-hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="rok-h1">
+    {bg && (
+      <div class="absolute inset-0 -z-10" aria-hidden="true">
+        <Picture src={photo(bg.rel)} alt="" widths={[600, 1000, 1350]} sizes="100vw" formats={['avif', 'webp']} loading="eager" class="size-full object-cover opacity-40 saturate-[.8]" />
+        <div class="absolute inset-0 bg-[linear-gradient(0deg,#121211_0%,rgba(18,18,17,0.55)_50%,rgba(18,18,17,0.3)_100%)]"></div>
+      </div>
+    )}
+    <div class="wrap grid gap-10 pt-12 pb-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-end lg:gap-6 lg:pt-20 lg:pb-16">
+      <div class="grid justify-items-start gap-5">
+        <a href="/wyniki/" data-enter style="--i:0" class="link-draw inline-flex min-h-11 items-center gap-2 font-condensed text-[17px] font-semibold"><ArrowLeft class="size-4" aria-hidden="true" stroke-linecap="square" /> Wszystkie lata</a>
+        <p class="eyebrow" data-enter style="--i:1">{edition.number} edycja</p>
+        <h1 id="rok-h1" class="font-display text-[clamp(96px,20vw,180px)] leading-[0.8] tabular-nums lg:text-[min(12vw,190px)]" data-enter style="--i:2">{year}</h1>
+        <p class="lead text-fg/85" data-enter style="--i:3">{date ?? year}. {rows.length} osób na mecie w {races.length} biegach.</p>
+      </div>
+      <ul class="grid gap-px overflow-hidden rounded-sm bg-fg/15 sm:grid-cols-3" data-enter style="--i:4">
+        {winners.map((w) => (
+          <li class="grid content-start gap-4 bg-bg/80 p-5 backdrop-blur-sm">
+            <span class="font-condensed text-lg leading-tight font-bold">{w.race}</span>
+            {[w.man, w.woman].filter(Boolean).map((r) => (
+              <span class="grid gap-0.5">
+                <span class="font-display text-[36px] leading-none tabular-nums">{r!.time}</span>
+                <span class="text-[15px] leading-5 font-semibold">{r!.name}</span>
+              </span>
+            ))}
+          </li>
+        ))}
+      </ul>
     </div>
   </section>
 
-  {rows.length ? (<>
-  <div class="sticky top-16 z-40 border-y border-line bg-bg/95 backdrop-blur-sm lg:top-[72px]">
+  <YearNav label="Wyniki z lat" current={year} sticky={false} years={allYears.map((y) => ({ year: y.year, href: `/wyniki/${y.year}/` }))} />
+
+  <div class="sticky top-16 z-40 border-b border-line bg-bg/95 backdrop-blur-sm lg:top-[72px]">
     <div class="wrap grid grid-cols-[minmax(0,1fr)] gap-3 py-3 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
       <nav aria-label="Biegi" class="min-w-0">
         <ul class="flex gap-2 overflow-x-auto [scrollbar-width:none]">
@@ -110,18 +147,12 @@ const jsonLd = {
       );
     })}
   </div>
-  </>) : (
-  <section class="bg-bg pb-16 lg:pb-24" aria-label="Brak tabel">
-    <div class="wrap">
-      <div class="grid place-items-center gap-4 bg-surface px-6 py-16 text-center">
-        <span class="font-display text-[clamp(72px,12vw,160px)] leading-none text-line-strong">{edition.number}</span>
-        <p class="max-w-[40ch] text-muted">Tabele wyników tej edycji pojawią się tu wkrótce.</p>
-        <a href="/wyniki/" class="btn btn-outline mt-2"><ArrowLeft aria-hidden="true" stroke-linecap="square" /> Wszystkie edycje</a>
-      </div>
-    </div>
-  </section>
-  )}
 </Base>
+
+<style>
+  /* Wejście nagłówka roku jest w CSS (global.css, [data-enter]); tu rusza od razu, bez kolażu przed nim. */
+  .year-hero { --enter-start: 0.05s; }
+</style>
 
 <script>
   const input = document.querySelector<HTMLInputElement>('[data-filter]');

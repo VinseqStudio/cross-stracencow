@@ -7,7 +7,7 @@ const OUT = path.resolve('db/data/results');
 const args = process.argv.slice(2);
 const jobs = args.length ? args : ['2025:5483', '2024:4696'];
 
-const title = (s) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const title = (s) => s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_m, a, b) => a + b.toUpperCase());
 
 function decode(buf) {
   const utf = new TextDecoder('utf-8').decode(buf);

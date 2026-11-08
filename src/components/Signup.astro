@@ -1,0 +1,153 @@
+---
+// Ostatni krok lejka: zapisy. Same zapisy i płatność prowadzi zewnętrzna firma (event.registration.url),
+// więc ta sekcja ma tylko jedno zadanie: wybrać bieg i przejść na stronę operatora.
+// Wygląda jak reszta strony: jasne tło, numery w kwadratach jak na trasie, lista jak w programie.
+// Desktop: kroki z lewej, lista biegów z prawej. Telefon: zwarte kroki, przycisk, potem lista.
+// Na telefonie dochodzi pasek „Zapisz się” przyklejony do dołu ekranu.
+import { ArrowUpRight } from '@lucide/astro';
+import { distances, event } from '../data/event';
+
+const reg = event.registration;
+const steps = [
+  { t: 'Wybierz bieg', b: '10 km, 5 km, sztafeta albo Cross Junior dla dzieci.' },
+  { t: 'Zapisz się i opłać', b: 'Na stronie operatora zapisów. Formularz zajmuje kilka minut.' },
+  { t: 'Odbierz pakiet', b: 'W biurze zawodów przy torze. Weź kod QR z zapisu i dokument.' },
+];
+const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copper: 'var(--medal-copper)' };
+const start = (d: (typeof distances)[number]) => d.facts.find((f) => f.label === 'Start')?.value;
+---
+
+<section id="zapisy" class="signup defer-render section-pad bg-bg" aria-labelledby="zapisy-title">
+  <div class="wrap grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
+    <div class="grid content-start gap-7">
+      <div class="grid gap-3">
+        <h2 id="zapisy-title" class="display-lg">Twoje miejsce na starcie</h2>
+        <p class="lead max-w-[44ch] text-muted">Zapisy na {event.edition} edycję, {event.dates.label}. Każdy bieg ma limit miejsc: gdy się zapełni, zapisy na ten dystans się zamykają.</p>
+      </div>
+      <ol class="steps grid">
+        {steps.map((s, i) => (
+          <li class="step relative grid grid-cols-[36px_minmax(0,1fr)] gap-x-4 pb-5 last:pb-0">
+            <span class:list={['step-badge', i === steps.length - 1 && 'is-last']} aria-hidden="true">{i + 1}</span>
+            <span class="grid gap-0.5 pt-1">
+              <span class="font-condensed text-[19px] leading-tight font-bold">{s.t}</span>
+              <span class="text-[15px] leading-[22px] text-muted">{s.b}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="grid content-start gap-4">
+      <ul class="grid border-t-2 border-fg">
+        {distances.map((d) => (
+          <li class="border-b border-line" style={`--tier:${tierVar[d.tier]}`}>
+            <a href={reg.url} target="_blank" rel="noopener" class="signup-row group grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 gap-y-1 py-4 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.8fr)_auto_auto] sm:py-4">
+              <span class="grid gap-1"><span class="sr-only">Zapisz się: </span>
+                <span class="inline-flex items-center gap-2 font-condensed text-[14px] font-bold tracking-[0.06em] text-muted uppercase"><i class="size-2.5 rounded-full bg-(--tier)" aria-hidden="true"></i>{d.name}</span>
+                <span class="font-display text-[34px] leading-none uppercase transition-colors group-hover:text-accent sm:text-[40px]">{d.distance}</span>
+              </span>
+              <span class="hidden text-[15px] leading-5 sm:grid"><span class="text-muted">Start</span><span class="font-semibold">{start(d)}</span></span>
+              <span class="hidden text-[15px] leading-5 sm:grid"><span class="text-muted">Limit</span><span class="font-semibold">{d.limit}</span></span>
+              <span class="text-right font-display text-[26px] leading-none whitespace-nowrap tabular-nums">{d.price}</span>
+              <span class="grid size-11 place-items-center rounded-sm bg-fg text-bg transition-colors group-hover:bg-red-strong group-hover:text-on-red">
+                <ArrowUpRight class="size-5" aria-hidden="true" stroke-linecap="square" />
+              </span>
+              <span class="col-span-3 text-[14px] text-muted sm:hidden">{start(d)}, limit {d.limit}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    {/* Główny przycisk lejka: szeroki pas na całą sekcję, żeby zamknąć obie kolumny jednym ruchem. */}
+    <a href={reg.url} target="_blank" rel="noopener" class="signup-cta group grain relative isolate grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 overflow-hidden rounded-sm bg-[#121211] p-5 pb-7 text-fg sm:items-center sm:gap-8 sm:p-8 lg:col-span-2 lg:px-12 lg:py-10" data-theme="dark">
+      <span class="trail pointer-events-none absolute right-0 bottom-0 left-0 -z-10 opacity-60" aria-hidden="true"></span>
+      <span class="grid gap-2">
+        <span class="eyebrow">Zapisy na {event.edition} edycję, {event.dates.label}</span>
+        <span class="font-display text-[clamp(44px,6vw,84px)] leading-[0.9] uppercase">Przejdź do <span class="text-red">zapisów</span></span>
+        <span class="max-w-[60ch] text-[15px] leading-[22px] text-fg/75">Zapisy i płatności prowadzi {reg.provider ? reg.provider : 'zewnętrzny operator'}. Jego strona otworzy się w nowej karcie.</span>
+      </span>
+      <span class="cta-arrow grid size-14 place-items-center rounded-sm bg-red-strong text-on-red sm:size-24">
+        <ArrowUpRight class="size-7 sm:size-11" aria-hidden="true" stroke-linecap="square" />
+      </span>
+    </a>
+  </div>
+</section>
+
+<div class="signup-bar fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/95 backdrop-blur-sm lg:hidden" data-shown="false">
+  <div class="wrap flex items-center justify-between gap-4 py-3">
+    <span class="grid leading-tight">
+      <span class="font-condensed text-[17px] font-bold">{event.dates.label}</span>
+      <span class="text-[14px] text-muted">Start od {event.feeFrom}</span>
+    </span>
+    <a href="#zapisy" class="btn btn-primary min-h-12 px-5">Zapisz się</a>
+  </div>
+</div>
+
+<style>
+  .step-badge {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    background: var(--text);
+    color: var(--bg);
+    font-family: var(--font-display);
+    font-size: 18px;
+    line-height: 1;
+    border-radius: var(--radius-sm);
+  }
+  .step-badge.is-last { background: var(--red-strong); color: var(--on-red); }
+  /* Pionowa przerywana linia od kroku do kroku, jak linia trasy. */
+  .step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 40px;
+    bottom: 4px;
+    width: 4px;
+    background-image: linear-gradient(180deg, var(--red) 0 12px, transparent 12px 100%);
+    background-size: 100% 20px;
+  }
+  .signup-cta { transition: transform 0.2s var(--ease-out-quint); }
+  .signup-cta:hover { transform: translateY(-2px); }
+  .signup-cta:active { transform: translateY(0); }
+  .cta-arrow svg { transition: transform 0.3s var(--ease-out-quint); }
+  .signup-cta:hover .cta-arrow svg { transform: translate(4px, -4px); }
+  .signup-bar { transform: translateY(100%); transition: transform 0.3s var(--ease-out-quint); padding-bottom: env(safe-area-inset-bottom); }
+  .signup-bar[data-shown='true'] { transform: none; }
+</style>
+
+<script>
+  // Pasek „Zapisz się” na telefonie. Widoczny tylko w dwóch miejscach, gdzie niczego nie zasłania:
+  // - po hero, zanim zaczną się karty dystansów (pasek liczb),
+  // - na trasie, w trakcie przesuwania odcinków w bok (Route.astro ustawia data-bar: „show” do mety, potem „hide”).
+  // Od Ściany Płaczu w dół już się nie pokazuje: dalej są własne przyciski zapisu, a na końcu sekcja zapisów.
+  // Liczone z położenia elementów przy każdej klatce przewijania, bez IntersectionObserver: zachowuje się tak samo
+  // na każdym telefonie, także przy szybkim przewijaniu z rozpędu i zmianie wysokości paska adresu.
+  const bar = document.querySelector<HTMLElement>('.signup-bar');
+  const hero = document.querySelector<HTMLElement>('.hero');
+  const cards = document.querySelector<HTMLElement>('#dystanse');
+  const route = document.querySelector<HTMLElement>('.route-pin');
+  if (bar && hero) {
+    const onScreen = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < innerHeight;
+    };
+    let frame = 0;
+    const sync = () => {
+      frame = 0;
+      const pastHero = hero.getBoundingClientRect().bottom < 0;
+      const beforeCards = !!cards && cards.getBoundingClientRect().top >= innerHeight;
+      const onRoute = !!route && route.dataset.bar === 'show' && onScreen(route);
+      bar.dataset.shown = String(pastHero && (beforeCards || onRoute));
+    };
+    const queue = () => { if (!frame) frame = requestAnimationFrame(sync); };
+    addEventListener('scroll', queue, { passive: true });
+    addEventListener('resize', queue);
+    addEventListener('signup-bar', queue);
+    sync();
+  }
+</script>

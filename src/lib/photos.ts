@@ -1,3 +1,4 @@
+// Zdjęcia z src/assets/photos/<rok>/: pojedyncze po ścieżce i wszystkie z danego roku, gotowe dla astro:assets.
 import type { ImageMetadata } from 'astro';
 
 const files = import.meta.glob<{ default: ImageMetadata }>('/src/assets/photos/**/*.jpg', { eager: true });
