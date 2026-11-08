@@ -133,7 +133,8 @@ const stats = [
   }
 
   /* Telefon i tablet: pionowa oś. Pod spodem szara przerywana linia (cała trasa),
-     na niej czerwona, która wydłuża się z przewijaniem (--p od 0 do 1 ustawia skrypt). */
+     na niej czerwona, odsłaniana z przewijaniem (--p od 0 do 1 ustawia skrypt).
+     Przycinamy (clip-path), a nie skalujemy: kreski mają stałą długość i czerwone leżą dokładnie na szarych. */
   @media (max-width: 1023px) {
     .station:not(:last-child)::before,
     .station:not(:last-child)::after {
@@ -144,10 +145,9 @@ const stats = [
       bottom: -32px;
       width: 4px;
       background-size: 100% 22px;
-      transform-origin: 50% 0;
     }
     .station:not(:last-child)::before { background-image: linear-gradient(180deg, var(--border-strong) 0 12px, transparent 12px 100%); opacity: 0.45; }
-    .station:not(:last-child)::after { background-image: linear-gradient(180deg, var(--red) 0 12px, transparent 12px 100%); transform: scaleY(var(--p, 1)); }
+    .station:not(:last-child)::after { background-image: linear-gradient(180deg, var(--red) 0 12px, transparent 12px 100%); clip-path: inset(0 0 calc((1 - var(--p, 1)) * 100%) 0); }
     @media (min-width: 640px) { .station:not(:last-child)::before, .station:not(:last-child)::after { bottom: -40px; } }
 
     /* Numer, do którego jeszcze nie dobiegłeś: sam obrys. Po dobiegnięciu wypełnia się i lekko podskakuje. */
