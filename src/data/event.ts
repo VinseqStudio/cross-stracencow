@@ -5,7 +5,8 @@ export const event = {
   name: 'Cross Straceńców',
   edition: 'XVII',
   // Termin XVII edycji: założenie z systemu marki, do potwierdzenia przez organizatora.
-  dates: { label: '24 i 25 kwietnia 2027', start: '2027-04-24T16:00:00+02:00', end: '2027-04-25T14:00:00+02:00', assumed: true },
+  // `days`: daty soboty i niedzieli (godziny startów biegów są w `distances[].startsAt`); strefa czasu letniego +02:00.
+  dates: { label: '24 i 25 kwietnia 2027', start: '2027-04-24T16:00:00+02:00', end: '2027-04-25T14:00:00+02:00', days: { saturday: '2027-04-24', sunday: '2027-04-25' }, tz: '+02:00', assumed: true },
   venue: { name: 'Tor motocrossowy Górków', district: 'Górków', city: 'Głogów' },
   // Zapisy prowadzi zewnętrzna firma. Podmień `url` i `provider` na prawdziwe, gdy organizator je poda.
   registration: { open: true, url: 'https://zapisy.example/cross-stracencow-2027', provider: '', assumed: true },
@@ -40,11 +41,14 @@ export type Distance = {
   photo: string;
   alt: string;
   first?: boolean;
+  /** Godzina startu do danych strukturalnych (schema.org subEvent). Tekst na stronie jest w `facts`. */
+  startsAt: { day: 'saturday' | 'sunday'; time: string };
 };
 
 export const distances: Distance[] = [
   {
     id: '10km',
+    startsAt: { day: 'saturday', time: '16:00' },
     name: 'Bieg Złoty',
     distance: '10 km',
     tier: 'gold',
@@ -61,6 +65,7 @@ export const distances: Distance[] = [
   },
   {
     id: '5km',
+    startsAt: { day: 'saturday', time: '16:15' },
     name: 'Bieg Srebrny',
     distance: '5 km',
     tier: 'silver',
@@ -78,6 +83,7 @@ export const distances: Distance[] = [
   },
   {
     id: 'sztafeta',
+    startsAt: { day: 'sunday', time: '10:30' },
     name: 'Sztafeta',
     distance: '6 × 1 km',
     tier: 'copper',
@@ -94,6 +100,7 @@ export const distances: Distance[] = [
   },
   {
     id: 'junior',
+    startsAt: { day: 'sunday', time: '12:00' },
     name: 'Cross Junior',
     distance: '3 biegi',
     tier: 'copper',

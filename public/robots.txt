@@ -1,5 +1,26 @@
+# Cross Straceńców Głogów: cała strona jest otwarta dla wyszukiwarek i agentów AI.
 User-agent: *
 Allow: /
 
-# Opis strony dla agentów AI: https://crossstracencow.pl/llms.txt
+# Wyszukiwarki i asystenci AI (jawne zaproszenie; wszystkie mają pełny dostęp).
+User-agent: Googlebot
+User-agent: Google-Extended
+User-agent: Bingbot
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: DuckAssistBot
+User-agent: MistralAI-User
+User-agent: CCBot
+Allow: /
+
+# Opis strony dla agentów AI (Markdown): https://crossstracencow.pl/llms.txt
+# Wyniki jako JSON: https://crossstracencow.pl/wyniki/<rok>.json
 Sitemap: https://crossstracencow.pl/sitemap-index.xml

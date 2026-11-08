@@ -15,36 +15,69 @@ import GalleryTeaser from '../components/GalleryTeaser.astro';
 import ResultsTeaser from '../components/ResultsTeaser.astro';
 import Faq from '../components/Faq.astro';
 import { event, distances, faq } from '../data/event';
+import { getImage } from 'astro:assets';
+import { heroImage } from '../lib/hero';
+import { ids, venueNode } from '../lib/seo';
+import { lcpPreload } from '../lib/lcp';
+
+const lcpImage = await lcpPreload(heroImage.src, heroImage.widths, heroImage.sizes);
 
 const site = Astro.site!.href.replace(/\/$/, '');
+const id = ids(site);
+const reg = event.registration;
+const availability = `https://schema.org/${reg.open ? 'InStock' : 'PreOrder'}`;
+const price = (p: string) => Number(p.replace(/\D/g, ''));
+const prices = distances.map((d) => price(d.price));
+// Zdjęcie wydarzenia dla Google (wydarzenia w wynikach wyszukiwania): obraz OG i duże zdjęcie z hero.
+const heroLarge = await getImage({ src: heroImage.src, width: 1350, format: 'webp' });
+// Dane strukturalne strony głównej: wydarzenie z biegami (subEvent, każdy z godziną startu i ceną) oraz pytania.
+// Organizator, serwis i strona są we wspólnym grafie w Base.astro; tu odwołania przez @id.
 const jsonLd = [
   {
-    '@context': 'https://schema.org',
     '@type': 'SportsEvent',
+    '@id': id.event,
     name: `${event.edition} ${event.name}`,
-    description: 'Bieg przełajowy z przeszkodami naturalnymi po torze motocrossowym w Głogowie: 5 km, 10 km, sztafety 6 × 1 km i biegi dzieci.',
+    alternateName: `${event.name} Głogów ${event.dates.days.saturday.slice(0, 4)}`,
+    url: `${site}/`,
+    description: 'Bieg przełajowy z naturalnymi przeszkodami po torze motocrossowym w Głogowie: 10 km, 5 km, sztafeta 6 × 1 km i biegi dzieci Cross Junior. Rowy z wodą, błoto, piaszczyste podbiegi i Ściana Płaczu. Medal Finisher dla każdego.',
     sport: 'Bieg przełajowy',
+    keywords: 'bieg przełajowy, cross, bieg z przeszkodami, bieg Głogów, bieg błotny, Ściana Płaczu, bieg dla dzieci',
     startDate: event.dates.start,
     endDate: event.dates.end,
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    location: {
-      '@type': 'Place',
-      name: event.venue.name,
-      address: { '@type': 'PostalAddress', addressLocality: event.venue.city, addressRegion: 'dolnośląskie', addressCountry: 'PL' },
+    isAccessibleForFree: false,
+    inLanguage: 'pl-PL',
+    location: venueNode(site),
+    image: [`${site}/og.jpg`, new URL(heroLarge.src, site).href],
+    organizer: { '@id': id.organizer },
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'PLN',
+      lowPrice: Math.min(...prices),
+      highPrice: Math.max(...prices),
+      offerCount: distances.length,
+      availability,
+      url: reg.url,
     },
-    image: [`${site}/og.jpg`],
-    organizer: { '@type': 'Organization', name: event.organizer.name, email: event.organizer.email, telephone: `+48 ${event.organizer.phone}` },
     subEvent: distances.map((d) => ({
       '@type': 'SportsEvent',
+      '@id': `${site}/#dystans-${d.id}`,
       name: `${d.name} ${d.distance}`,
       description: d.description,
-      offers: { '@type': 'Offer', price: d.price.replace(/\D/g, ''), priceCurrency: 'PLN' },
+      sport: 'Bieg przełajowy',
+      startDate: `${event.dates.days[d.startsAt.day]}T${d.startsAt.time}:00${event.dates.tz}`,
+      eventStatus: 'https://schema.org/EventScheduled',
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      location: { '@id': id.venue },
+      organizer: { '@id': id.organizer },
+      superEvent: { '@id': id.event },
+      offers: { '@type': 'Offer', price: price(d.price), priceCurrency: 'PLN', availability, url: reg.url },
     })),
   },
   {
-    '@context': 'https://schema.org',
     '@type': 'FAQPage',
+    '@id': `${site}/#faq`,
     mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
   },
 ];
@@ -54,6 +87,8 @@ const jsonLd = [
   title="Cross Straceńców Głogów: bieg przełajowy po torze motocrossowym"
   description="Cross Straceńców w Głogowie: 5 i 10 km przez rowy z wodą, błoto i piaszczyste podbiegi, sztafety i biegi dzieci. Galeria zdjęć i wyniki z kolejnych lat."
   jsonLd={jsonLd}
+  lcpImage={lcpImage}
+  about={{ '@id': id.event }}
   footerEdge="#ffffff"
 >
   <Hero />

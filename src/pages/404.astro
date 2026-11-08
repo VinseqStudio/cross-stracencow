@@ -1,0 +1,31 @@
+---
+// Strona 404: adres nie istnieje (albo to stary link z poprzedniej strony). Bez indeksowania, z drogą powrotną
+// do najważniejszych miejsc. Stare adresy /index.php/... przekierowuje vercel.json, więc tu trafiają tylko literówki.
+import { ArrowRight, ArrowUpRight } from '@lucide/astro';
+import Base from '../layouts/Base.astro';
+import { event } from '../data/event';
+
+const links = [
+  { label: 'Dystanse i ceny', href: '/#dystanse' },
+  { label: 'Program biegu', href: '/#program' },
+  { label: 'Galeria zdjęć', href: '/galeria/' },
+  { label: 'Wyniki', href: '/wyniki/' },
+];
+---
+
+<Base title="Nie ma takiej strony" description="Ta strona nie istnieje. Wróć na stronę główną Crossu Straceńców w Głogowie." noindex>
+  <section class="grain bg-bg text-fg" data-theme="dark" aria-labelledby="nf-title">
+    <div class="wrap relative z-[1] grid min-h-[calc(100svh-64px)] content-center gap-6 py-16 lg:min-h-[calc(100svh/var(--page-zoom)-72px)]">
+      <p class="eyebrow">Błąd 404</p>
+      <h1 id="nf-title" class="font-display text-[clamp(64px,16vw,168px)] leading-[0.85] uppercase">Zgubiłeś <span class="text-red">trasę.</span></h1>
+      <p class="lead max-w-[44ch] text-fg/85">Pod tym adresem nic nie ma. Może link jest stary albo ma literówkę. Wróć na trasę:</p>
+      <div class="grid gap-3 sm:flex sm:flex-wrap">
+        <a href="/" class="btn btn-primary min-h-14 px-7">Strona główna <ArrowRight aria-hidden="true" stroke-linecap="square" /></a>
+        <a href={event.registration.url} target="_blank" rel="noopener" class="btn btn-outline min-h-14 border-fg/40 px-7">Zapisz się na start <ArrowUpRight aria-hidden="true" stroke-linecap="square" /></a>
+      </div>
+      <ul class="mt-4 flex flex-wrap gap-x-8 gap-y-1">
+        {links.map((l) => <li><a href={l.href} class="link-draw inline-flex min-h-11 items-center font-condensed text-[18px] font-semibold">{l.label}</a></li>)}
+      </ul>
+    </div>
+  </section>
+</Base>

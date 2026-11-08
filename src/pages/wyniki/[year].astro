@@ -5,6 +5,8 @@ import { Picture } from 'astro:assets';
 import { ArrowLeft, Search } from '@lucide/astro';
 import { db, Edition, eq } from 'astro:db';
 import Base from '../../layouts/Base.astro';
+import { lcpPreload } from '../../lib/lcp';
+import { breadcrumbs, ids } from '../../lib/seo';
 import YearNav from '../../components/YearNav.astro';
 import { photo } from '../../lib/photos';
 import { resultsOf, winnersOf, yearsWithResults, yearPhoto } from '../../lib/results';
@@ -22,27 +24,28 @@ const date = edition.date
   ? new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(edition.date))
   : null;
 const bg = yearPhoto[year];
+// Zdjęcie w tle nagłówka to LCP strony: preload w <head> z tymi samymi ustawieniami co <Picture> niżej.
+const BG_WIDTHS = [600, 1000, 1350];
+const lcpImage = bg ? await lcpPreload(photo(bg.rel), BG_WIDTHS, '100vw') : undefined;
 const allYears = await yearsWithResults();
 
 const site = Astro.site!.href.replace(/\/$/, '');
-// Dane strukturalne: tabela wyników jako zbiór danych (z plikiem JSON do pobrania) i okruszki.
+// Dane strukturalne: tabela wyników jako zbiór danych (Google Dataset Search, agenci AI) z plikiem JSON i okruszki.
 const jsonLd = [{
-  '@context': 'https://schema.org',
   '@type': 'Dataset',
+  '@id': `${site}/wyniki/${year}/#wyniki`,
   name: `Wyniki Crossu Straceńców ${year}`,
-  description: `Wyniki biegów ${races.join(', ')} na torze motocrossowym w Głogowie.`,
+  description: `Pełne wyniki ${edition.number ?? ''} edycji Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} osób na mecie: miejsce, numer startowy, imię i nazwisko, klub, kategoria i czas.`.replace('  ', ' '),
+  url: `${site}/wyniki/${year}/`,
+  inLanguage: 'pl-PL',
+  isAccessibleForFree: true,
+  keywords: ['Cross Straceńców', 'wyniki biegu', 'bieg przełajowy', 'Głogów', String(year)],
   temporalCoverage: edition.date ?? String(year),
+  spatialCoverage: { '@type': 'Place', name: 'Tor motocrossowy Górków, Głogów' },
+  creator: { '@id': ids(site).organizer },
+  isPartOf: { '@id': ids(site).website },
   distribution: { '@type': 'DataDownload', encodingFormat: 'application/json', contentUrl: `${site}/wyniki/${year}.json` },
-  creator: { '@type': 'Organization', name: 'Sport Górski Jerzy Górski' },
-}, {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Cross Straceńców', item: `${site}/` },
-    { '@type': 'ListItem', position: 2, name: 'Wyniki', item: `${site}/wyniki/` },
-    { '@type': 'ListItem', position: 3, name: String(year), item: `${site}/wyniki/${year}/` },
-  ],
-}];
+}, breadcrumbs(site, [['Cross Straceńców', '/'], ['Wyniki', '/wyniki/'], [String(year), `/wyniki/${year}/`]])];
 ---
 
 <Base
@@ -50,11 +53,13 @@ const jsonLd = [{
   description={`Wyniki Crossu Straceńców w Głogowie (${year}): ${races.join(', ')}. ${rows.length} osób na mecie.`}
   current="wyniki"
   jsonLd={jsonLd}
+  lcpImage={lcpImage}
 >
+  <link slot="head" rel="alternate" type="application/json" title={`Wyniki ${year} (JSON)`} href={`/wyniki/${year}.json`} />
   <section class="year-hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="rok-h1">
     {bg && (
       <div class="absolute inset-0 -z-10" aria-hidden="true">
-        <Picture src={photo(bg.rel)} alt="" widths={[600, 1000, 1350]} sizes="100vw" formats={['avif', 'webp']} loading="eager" class="size-full object-cover opacity-40 saturate-[.8]" />
+        <Picture src={photo(bg.rel)} alt="" widths={BG_WIDTHS} sizes="100vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" class="size-full object-cover opacity-40 saturate-[.8]" />
         <div class="absolute inset-0 bg-[linear-gradient(0deg,#121211_0%,rgba(18,18,17,0.55)_50%,rgba(18,18,17,0.3)_100%)]"></div>
       </div>
     )}

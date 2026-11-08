@@ -3,7 +3,7 @@
 // Wejście tytułu jest w CSS (global.css: [data-line], [data-enter]); skrypt na dole obsługuje tylko rotator i licznik.
 import { Picture } from 'astro:assets';
 import { ArrowRight, ArrowUpRight } from '@lucide/astro';
-import { photo } from '../lib/photos';
+import { heroImage } from '../lib/hero';
 import { event } from '../data/event';
 
 // Licznik w HTML z dnia budowania; przeglądarka od razu podmienia go na aktualny.
@@ -23,10 +23,10 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
 <section class="hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="hero-title">
   <div class="hero-media absolute inset-x-0 -top-[40%] -z-10 h-full overflow-hidden sm:-top-[28%] lg:inset-0 lg:h-auto" aria-hidden="true">
     <Picture
-      src={photo('2025/2025-03.jpg')}
+      src={heroImage.src}
       alt=""
-      widths={[480, 768, 1080, 1350]}
-      sizes="100vw"
+      widths={heroImage.widths}
+      sizes={heroImage.sizes}
       formats={['avif', 'webp']}
       loading="eager"
       fetchpriority="high"

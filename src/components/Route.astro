@@ -201,30 +201,34 @@ const stats = [
   // Liczone w każdej klatce przewijania (rAF), więc linia idzie dokładnie za palcem w obie strony.
   if (stations.length) {
     let frame = 0;
+    let near = false; // sekcja blisko ekranu: tylko wtedy liczymy przy przewijaniu
     const update = () => {
       frame = 0;
       if (!small.matches || calm.matches) {
         stations.forEach((s) => { s.style.removeProperty('--p'); s.classList.add('is-reached', 'is-seen'); });
         return;
       }
+      // Najpierw wszystkie odczyty położenia, potem zapisy (klasy, --p): bez wymuszonego przeliczania układu w pętli.
+      const rects = stations.map((s) => s.getBoundingClientRect());
       const runner = innerHeight * 0.6;
+      const seenLine = innerHeight * 0.88;
       stations.forEach((s, i) => {
-        const r = s.getBoundingClientRect();
+        const r = rects[i];
         const start = r.top + 22; // środek numeru
-        s.classList.toggle('is-reached', start < runner);
-        if (r.top < innerHeight * 0.88) s.classList.add('is-seen');
         // Ostatni odcinek: zamiast linii do następnego numeru szachownica mety (160 px pod numerem).
-        const next = stations[i + 1];
-        const end = next ? next.getBoundingClientRect().top + 22 : start + 30 + Math.min(160, r.height - 52);
+        const end = rects[i + 1] ? rects[i + 1].top + 22 : start + 30 + Math.min(160, r.height - 52);
         const p = Math.min(1, Math.max(0, (runner - start) / (end - start)));
+        s.classList.toggle('is-reached', start < runner);
+        if (r.top < seenLine) s.classList.add('is-seen');
         s.style.setProperty('--p', p.toFixed(3));
       });
     };
-    const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const queue = () => { if (near && !frame) frame = requestAnimationFrame(update); };
+    new IntersectionObserver(([e]) => { near = e.isIntersecting; if (near) queue(); }, { rootMargin: '50% 0px' })
+      .observe(stations[0].parentElement!);
     addEventListener('scroll', queue, { passive: true });
     addEventListener('resize', queue);
-    small.addEventListener('change', queue);
-    update();
+    small.addEventListener('change', () => { near = true; queue(); });
   }
 
   // Desktop: linia trasy rysuje się raz, gdy odcinki wchodzą na ekran: numer, odcinek linii, następny numer, na końcu meta.
