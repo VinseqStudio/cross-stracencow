@@ -149,6 +149,21 @@ const stats = [
     .station:not(:last-child)::before { background-image: linear-gradient(180deg, var(--border-strong) 0 12px, transparent 12px 100%); opacity: 0.45; }
     .station:not(:last-child)::after { background-image: linear-gradient(180deg, var(--red) 0 12px, transparent 12px 100%); clip-path: inset(0 0 calc((1 - var(--p, 1)) * 100%) 0); }
     @media (min-width: 640px) { .station:not(:last-child)::before, .station:not(:last-child)::after { bottom: -40px; } }
+    /* Za ostatnim numerem oś kończy się szachownicą mety (jak na desktopie), odsłanianą tak samo jak linia. */
+    .station:last-child::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 52px;
+      height: min(160px, calc(100% - 52px));
+      width: 14px;
+      background-image:
+        linear-gradient(45deg, var(--text) 25%, transparent 25%, transparent 75%, var(--text) 75%),
+        linear-gradient(45deg, var(--text) 25%, transparent 25%, transparent 75%, var(--text) 75%);
+      background-size: 14px 14px;
+      background-position: 0 0, 7px 7px;
+      clip-path: inset(0 0 calc((1 - var(--p, 1)) * 100%) 0);
+    }
 
     /* Numer, do którego jeszcze nie dobiegłeś: sam obrys. Po dobiegnięciu wypełnia się i lekko podskakuje. */
     :global(.js) .route .station-badge { transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease; }
@@ -198,9 +213,9 @@ const stats = [
         const start = r.top + 22; // środek numeru
         s.classList.toggle('is-reached', start < runner);
         if (r.top < innerHeight * 0.88) s.classList.add('is-seen');
+        // Ostatni odcinek: zamiast linii do następnego numeru szachownica mety (160 px pod numerem).
         const next = stations[i + 1];
-        if (!next) return;
-        const end = next.getBoundingClientRect().top + 22;
+        const end = next ? next.getBoundingClientRect().top + 22 : start + 30 + Math.min(160, r.height - 52);
         const p = Math.min(1, Math.max(0, (runner - start) / (end - start)));
         s.style.setProperty('--p', p.toFixed(3));
       });
