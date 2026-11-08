@@ -1,13 +1,13 @@
 ---
 // Trasa jako odcinki jednej pętli, połączone przerywaną linią z logo.
-// Desktop: cztery odcinki w rzędzie. Telefon i tablet: pasek przypięty do ekranu przesuwa się w bok,
-// gdy przewijasz stronę w dół (bez JS lub przy ograniczonym ruchu: zwykły pasek do przesuwania palcem).
+// Desktop: cztery odcinki w rzędzie, linia biegnie poziomo od numeru do numeru.
+// Telefon i tablet: oś trasy w pionie. Zwykłe przewijanie w dół (bez przesuwu w bok, który mylił przy przeciąganiu palcem):
+// czerwona linia „biegnie” za kciukiem od numeru do numeru, a numer zapala się, gdy do niego dobiegniesz.
+// Bez JS lub przy ograniczonym ruchu cała linia jest od razu narysowana.
 import { Picture } from 'astro:assets';
 import { chapters } from '../data/event';
 import { photo } from '../lib/photos';
 
-// Trzy liczby o pętli. Na komputerze stoją obok tytułu; na telefonie i tablecie są na górze przypiętego
-// paska odcinków, żeby przy przesuwaniu w bok ekran był wypełniony od nagłówka do dolnego paska zapisów.
 const stats = [
   { k: 'Pętla', v: '5 km' },
   { k: 'Teren', v: 'Motocross' },
@@ -16,65 +16,65 @@ const stats = [
 ---
 
 <section id="trasa" class="route section-pad bg-surface" aria-labelledby="trasa-title">
-  <div class="wrap grid gap-10 lg:gap-14">
-    <header class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10">
+  <div class="wrap grid gap-8 lg:gap-14">
+    <header class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10">
       <div class="grid gap-3">
         <h2 id="trasa-title" class="display-lg">Jedna pętla, pięć kilometrów</h2>
         <p class="lead max-w-[48ch] text-muted">Start i meta na torze motocrossowym. Po drodze piach, trawa, rowy z wodą, błoto i Ściana Płaczu. Na 10 km pokonujesz pętlę dwa razy.</p>
       </div>
-      <dl class="hidden grid-cols-[auto_auto_auto] justify-start gap-10 whitespace-nowrap lg:grid">
-        {stats.map((x) => <div><dt class="text-[13px] text-muted">{x.k}</dt><dd class="font-display text-[40px] leading-none">{x.v}</dd></div>)}
+      <dl class="grid grid-cols-[auto_auto_auto] justify-start gap-5 whitespace-nowrap sm:gap-6 lg:gap-10">
+        {stats.map((x) => <div><dt class="text-[13px] text-muted">{x.k}</dt><dd class="font-display text-[clamp(22px,6.6vw,28px)] leading-none sm:text-[34px] lg:text-[40px]">{x.v}</dd></div>)}
       </dl>
     </header>
-  </div>
 
-  <div class="route-pin mt-8 lg:mt-14">
-  <div class="route-sticky">
-  <dl class="route-stats wrap mb-6 grid grid-cols-[auto_auto_auto] justify-start gap-5 whitespace-nowrap sm:gap-6 lg:hidden">
-    {stats.map((x) => <div><dt class="text-[13px] text-muted">{x.k}</dt><dd class="font-display text-[clamp(22px,6.6vw,28px)] leading-none sm:text-[34px]">{x.v}</dd></div>)}
-  </dl>
-  <ol class="stations wrap flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible">
-    {chapters.map((c, i) => (
-      <li class="station relative w-[82%] shrink-0 snap-start sm:w-[46%] lg:w-auto">
-        <div class="station-head relative mb-5 flex h-11 items-center" aria-hidden="true">
-          <span class:list={['station-badge', i === chapters.length - 1 && 'is-finish']}>{String(i + 1).padStart(2, '0')}</span>
-          {i < chapters.length - 1 ? <span class="station-line"></span> : <span class="station-flag"></span>}
-        </div>
-        <div class="station-photo photo-zoom aspect-[4/5] overflow-hidden rounded-sm">
-          <Picture
-            src={photo(c.photo)}
-            alt={c.alt}
-            widths={[360, 560, 720]}
-            sizes="(min-width: 1024px) 300px, (min-width: 640px) 46vw, 82vw"
-            formats={['avif', 'webp']}
-            class="size-full object-cover"
-          />
-        </div>
-        <h3 class="mt-5 font-condensed text-[24px] leading-[1.1] font-bold">{c.title}</h3>
-        <p class="mt-2 text-base leading-6 text-muted">{c.body}</p>
-      </li>
-    ))}
-  </ol>
-  <div class="route-progress wrap mt-6 hidden" aria-hidden="true"><span class="block h-[3px] bg-line"><span class="route-bar block h-full origin-left scale-x-0 bg-red"></span></span></div>
-  </div>
+    <ol class="stations grid gap-10 sm:gap-12 lg:grid-cols-4 lg:gap-6">
+      {chapters.map((c, i) => (
+        <li class="station relative grid grid-cols-[44px_minmax(0,1fr)] gap-x-4 sm:gap-x-5 lg:block">
+          <div class="station-head relative flex h-11 items-center lg:mb-5" aria-hidden="true">
+            <span class:list={['station-badge', i === chapters.length - 1 && 'is-finish']}>{String(i + 1).padStart(2, '0')}</span>
+            {i < chapters.length - 1 ? <span class="station-line"></span> : <span class="station-flag"></span>}
+          </div>
+          <div class="station-body">
+            <h3 class="station-title font-condensed text-[24px] leading-[1.1] font-bold">{c.title}</h3>
+            <div class="station-photo photo-zoom overflow-hidden rounded-sm">
+              <Picture
+                src={photo(c.photo)}
+                alt={c.alt}
+                widths={[360, 560, 720]}
+                sizes="(min-width: 1024px) 300px, (min-width: 640px) 45vw, 80vw"
+                formats={['avif', 'webp']}
+                class="size-full object-cover"
+              />
+            </div>
+            <p class="station-text text-base leading-6 text-muted">{c.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
   </div>
 </section>
 
 <style>
-  /* Niskie telefony (np. 360 x 640, iPhone SE): niższe zdjęcia, żeby odcinki zmieściły się w ekranie i dało się je przypiąć. */
-  @media (max-width: 1023px) and (max-height: 760px) { .station-photo { aspect-ratio: 4 / 3; } }
-
-  .stations { scroll-padding-inline: var(--gutter); --gap: 16px; }
-  /* Przypięty pasek (klasa z JS): sekcja stoi, a odcinki jadą w lewo razem z przewijaniem. */
-  .route-pin.is-pinned .route-sticky {
-    position: sticky;
-    top: 64px;
-    padding-top: 12px;
-    overflow: hidden;
+  /* Treść odcinka. Telefon: tytuł na wysokości numeru, pod nim zdjęcie i opis.
+     Tablet: zdjęcie z lewej, tytuł i opis z prawej. Desktop: zdjęcie, tytuł, opis w kolumnie. */
+  .station-body {
+    display: grid;
+    grid-template-areas: 'title' 'photo' 'text';
+    align-content: start;
   }
-  .route-pin.is-pinned .stations { overflow: visible; scroll-snap-type: none; will-change: transform; }
-  .route-pin.is-pinned .route-progress { display: block; }
-  @media (min-width: 1024px) { .stations { --gap: 24px; } }
+  .station-title { grid-area: title; display: flex; align-items: center; min-height: 44px; }
+  .station-photo { grid-area: photo; aspect-ratio: 4 / 3; margin-top: 12px; }
+  .station-text { grid-area: text; margin-top: 10px; }
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .station-body { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; grid-template-areas: 'photo title' 'photo text'; column-gap: 24px; }
+    .station-photo { margin-top: 0; }
+  }
+  @media (min-width: 1024px) {
+    .station-body { grid-template-areas: 'photo' 'title' 'text'; }
+    .station-title { display: block; min-height: 0; margin-top: 20px; }
+    .station-photo { aspect-ratio: 4 / 5; margin-top: 0; }
+    .station-text { margin-top: 8px; }
+  }
 
   /* Numer odcinka w kwadracie, od niego przerywana linia do następnego numeru. */
   .station-badge {
@@ -94,121 +94,131 @@ const stats = [
     border-radius: var(--radius-sm);
   }
   .station-badge.is-finish { background: var(--red-strong); color: var(--on-red); }
-  .station-line {
-    position: absolute;
-    top: 50%;
-    left: 56px;
-    right: calc(12px - var(--gap));
-    height: 5px;
-    margin-top: -2.5px;
-    background-image: linear-gradient(90deg, var(--red) 0 18px, transparent 18px 100%);
-    background-size: 32px 100%;
-    transform: skewX(-12deg);
-    transform-origin: left center;
+
+  /* Desktop: pozioma linia od numeru do numeru, na końcu szachownica mety. */
+  .station-line, .station-flag { display: none; }
+  @media (min-width: 1024px) {
+    .station-line {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 56px;
+      right: -12px;
+      height: 5px;
+      margin-top: -2.5px;
+      background-image: linear-gradient(90deg, var(--red) 0 18px, transparent 18px 100%);
+      background-size: 32px 100%;
+      transform: skewX(-12deg);
+      transform-origin: left center;
+    }
+    .station-flag {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 56px;
+      width: min(132px, calc(100% - 56px));
+      height: 14px;
+      margin-top: -7px;
+      background-color: var(--surface);
+      background-image:
+        linear-gradient(45deg, var(--text) 25%, transparent 25%, transparent 75%, var(--text) 75%),
+        linear-gradient(45deg, var(--text) 25%, transparent 25%, transparent 75%, var(--text) 75%);
+      background-size: 14px 14px;
+      background-position: 0 0, 7px 7px;
+      transform-origin: left center;
+    }
+    :global(.js) .route .station-line { transform: skewX(-12deg) scaleX(0); }
+    :global(.js) .route .station-flag { transform: scaleX(0); }
+    :global(.js) .route .station-badge { opacity: 0; }
   }
-  /* Ostatni odcinek kończy się szachownicą mety. */
-  .station-flag {
-    position: absolute;
-    top: 50%;
-    left: 56px;
-    width: min(132px, calc(100% - 56px));
-    height: 14px;
-    margin-top: -7px;
-    background-color: var(--surface);
-    background-image:
-      linear-gradient(45deg, var(--text) 25%, transparent 25%, transparent 75%, var(--text) 75%),
-      linear-gradient(45deg, var(--text) 25%, transparent 25%, transparent 75%, var(--text) 75%);
-    background-size: 14px 14px;
-    background-position: 0 0, 7px 7px;
-    transform-origin: left center;
+
+  /* Telefon i tablet: pionowa oś. Pod spodem szara przerywana linia (cała trasa),
+     na niej czerwona, która wydłuża się z przewijaniem (--p od 0 do 1 ustawia skrypt). */
+  @media (max-width: 1023px) {
+    .station:not(:last-child)::before,
+    .station:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 52px;
+      bottom: -32px;
+      width: 4px;
+      background-size: 100% 22px;
+      transform-origin: 50% 0;
+    }
+    .station:not(:last-child)::before { background-image: linear-gradient(180deg, var(--border-strong) 0 12px, transparent 12px 100%); opacity: 0.45; }
+    .station:not(:last-child)::after { background-image: linear-gradient(180deg, var(--red) 0 12px, transparent 12px 100%); transform: scaleY(var(--p, 1)); }
+    @media (min-width: 640px) { .station:not(:last-child)::before, .station:not(:last-child)::after { bottom: -40px; } }
+
+    /* Numer, do którego jeszcze nie dobiegłeś: sam obrys. Po dobiegnięciu wypełnia się i lekko podskakuje. */
+    :global(.js) .route .station-badge { transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease; }
+    :global(.js) .route .station:not(.is-reached) .station-badge {
+      background: var(--surface);
+      color: var(--text-muted);
+      box-shadow: inset 0 0 0 2px var(--border-strong);
+    }
+    :global(.js) .route .station.is-reached .station-badge { animation: badge-pop 0.45s var(--ease-out-quint, cubic-bezier(0.22, 1, 0.36, 1)); }
+    /* Zdjęcie odcinka wyłania się od dołu, gdy wchodzi na ekran. */
+    :global(.js) .route .station-photo { clip-path: inset(18% 0 0 0 round var(--radius-sm)); opacity: 0.4; transition: clip-path 0.7s var(--ease-out-quint, ease-out), opacity 0.7s ease; }
+    :global(.js) .route .station.is-seen .station-photo { clip-path: inset(0 0 0 0 round var(--radius-sm)); opacity: 1; }
   }
-  :global(.js) .route .station-line { transform: skewX(-12deg) scaleX(0); }
-  :global(.js) .route .station-flag { transform: scaleX(0); }
-  :global(.js) .route .station-badge { opacity: 0; }
+  @keyframes badge-pop {
+    0% { transform: scale(0.8); }
+    60% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    :global(.js) .route .station-badge { opacity: 1; }
+    :global(.js) .route .station-badge { opacity: 1; animation: none; }
     :global(.js) .route .station-line { transform: skewX(-12deg); }
     :global(.js) .route .station-flag { transform: none; }
+    :global(.js) .route .station-photo { clip-path: none; opacity: 1; transition: none; }
   }
 </style>
 
 <script>
-  // Telefon i tablet: przewijanie w dół przesuwa odcinki w bok. Wysokość sekcji = wysokość odcinków + droga paska.
-  const pin = document.querySelector<HTMLElement>('.route-pin');
-  const strip = pin?.querySelector<HTMLElement>('.stations');
-  const bar = pin?.querySelector<HTMLElement>('.route-bar');
-  const sticky = pin?.querySelector<HTMLElement>('.route-sticky');
-  const small = matchMedia('(max-width: 1023px)');
+  const stations = [...document.querySelectorAll<HTMLElement>('.route .station')];
   const calm = matchMedia('(prefers-reduced-motion: reduce)');
-  if (pin && strip && bar && sticky) {
-    let distance = 0;
+  const small = matchMedia('(max-width: 1023px)');
+
+  // Telefon i tablet: punkt „biegacza” to 60% wysokości ekranu. Linia między numerami wypełnia się,
+  // gdy ten punkt przesuwa się od numeru do następnego; numer zapala się, gdy biegacz go minie.
+  // Liczone w każdej klatce przewijania (rAF), więc linia idzie dokładnie za palcem w obie strony.
+  if (stations.length) {
     let frame = 0;
     const update = () => {
       frame = 0;
-      if (!pin.classList.contains('is-pinned')) return;
-      const run = pin.offsetHeight - sticky.offsetHeight;
-      const p = Math.min(1, Math.max(0, (64 - pin.getBoundingClientRect().top) / run));
-      strip.style.transform = `translate3d(${-p * distance}px, 0, 0)`;
-      bar.style.transform = `scaleX(${p})`;
-      // Dolny pasek „Zapisz się” jest widoczny w trakcie przesuwania odcinków; po dojechaniu do mety chowa się,
-      // a treść jedzie dalej. Signup.astro czyta data-bar po zdarzeniu „signup-bar”.
-      setBar(barFits && p < 1 ? 'show' : 'hide');
-    };
-    let barFits = false;
-    const setBar = (v: string) => {
-      if (pin.dataset.bar === v) return;
-      pin.dataset.bar = v;
-      dispatchEvent(new Event('signup-bar'));
-    };
-    const photos = [...strip.querySelectorAll<HTMLElement>('.station-photo')];
-    const BAR = 76;
-    const setup = () => {
-      pin.classList.remove('is-pinned');
-      pin.style.height = '';
-      strip.style.transform = '';
-      photos.forEach((ph) => { ph.style.height = ''; ph.style.aspectRatio = ''; });
-      setBar('show');
-      if (!small.matches || calm.matches) return;
-      const items = strip.querySelectorAll<HTMLElement>('.station');
-      const last = items[items.length - 1];
-      const gutter = parseFloat(getComputedStyle(strip).paddingRight);
-      distance = Math.max(0, last.offsetLeft + last.offsetWidth + gutter - strip.clientWidth);
-      if (!distance) return;
-      pin.classList.add('is-pinned');
-      // Zdjęcia dopasowują wysokość do ekranu: przypięty blok (liczby, numery, zdjęcia, opisy, postęp)
-      // wypełnia miejsce od górnego paska do dolnego paska zapisów, bez pustej przestrzeni pod spodem.
-      const rest = sticky.offsetHeight - photos[0].offsetHeight;
-      const room = Math.floor(innerHeight - 64 - BAR - 8 - rest);
-      const h = Math.min(Math.round(photos[0].offsetWidth * 1.4), Math.max(140, room));
-      photos.forEach((ph) => { ph.style.aspectRatio = 'auto'; ph.style.height = `${h}px`; });
-      // Gdy odcinek i tak nie mieści się w wysokości ekranu, zostaje zwykły pasek do przesuwania palcem.
-      if (sticky.offsetHeight > innerHeight - 64) {
-        pin.classList.remove('is-pinned');
-        photos.forEach((ph) => { ph.style.height = ''; ph.style.aspectRatio = ''; });
+      if (!small.matches || calm.matches) {
+        stations.forEach((s) => { s.style.removeProperty('--p'); s.classList.add('is-reached', 'is-seen'); });
         return;
       }
-      barFits = 64 + sticky.offsetHeight + BAR <= innerHeight;
-      // Sekcja jest wysoka tylko na tyle, ile trzeba na przejazd paska: bez pustego ekranu pod spodem.
-      pin.style.height = `${sticky.offsetHeight + distance * 1.15}px`;
-      update();
+      const runner = innerHeight * 0.6;
+      stations.forEach((s, i) => {
+        const r = s.getBoundingClientRect();
+        const start = r.top + 22; // środek numeru
+        s.classList.toggle('is-reached', start < runner);
+        if (r.top < innerHeight * 0.88) s.classList.add('is-seen');
+        const next = stations[i + 1];
+        if (!next) return;
+        const end = next.getBoundingClientRect().top + 22;
+        const p = Math.min(1, Math.max(0, (runner - start) / (end - start)));
+        s.style.setProperty('--p', p.toFixed(3));
+      });
     };
-    addEventListener('scroll', () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
-    // Na telefonie pasek adresu zmienia wysokość okna przy przewijaniu, więc przeliczamy tylko po zmianie szerokości.
-    let t = 0, width = innerWidth;
-    addEventListener('resize', () => {
-      if (innerWidth === width) return;
-      width = innerWidth;
-      clearTimeout(t);
-      t = window.setTimeout(setup, 150);
-    });
-    small.addEventListener('change', setup);
-    setup();
+    const queue = () => { if (!frame) frame = requestAnimationFrame(update); };
+    addEventListener('scroll', queue, { passive: true });
+    addEventListener('resize', queue);
+    small.addEventListener('change', queue);
+    update();
   }
 
-  // Linia trasy rysuje się raz, gdy odcinki zaczynają wchodzić na ekran (15%), szybko, zanim ruszy przesuw w bok: numer, odcinek linii, następny numer, na końcu meta.
+  // Desktop: linia trasy rysuje się raz, gdy odcinki wchodzą na ekran: numer, odcinek linii, następny numer, na końcu meta.
   const lines = [...document.querySelectorAll<HTMLElement>('.route .station-line')];
-  const drawn = document.querySelector<HTMLElement>('.route .route-sticky');
-  if (drawn && lines.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const row = document.querySelector<HTMLElement>('.route .stations');
+  let drawn = false;
+  const draw = () => {
+    if (drawn || !row || !lines.length || calm.matches || small.matches) return;
+    drawn = true;
     const step = 200;
     const io = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return;
@@ -222,6 +232,9 @@ const stats = [
       document.querySelector<HTMLElement>('.route .station-flag')
         ?.animate({ transform: ['scaleX(0)', 'scaleX(1)'] }, { duration: 400, delay: step * (lines.length + 0.5), fill: 'both' });
     }, { threshold: 0.15 });
-    io.observe(drawn);
-  }
+    io.observe(row);
+  };
+  draw();
+  // Strona otwarta wąsko i poszerzona do desktopu: numery są ukryte do animacji, więc ją uruchamiamy.
+  small.addEventListener('change', draw);
 </script>

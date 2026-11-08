@@ -2,6 +2,7 @@
 // Dystanse („Wybierz swoje wyzwanie”): cztery karty biegów z ceną, trudnością, faktami i przyciskiem zapisu.
 // Obok nagłówka: ramka „W każdym pakiecie startowym”. Dane kart: `distances` w src/data/event.ts.
 // Telefon: karty układają się w stos (sticky), tylko gdy każda mieści się cała na ekranie (skrypt na dole).
+// Na wysokim ekranie zdjęcie w karcie rośnie, żeby karta wypełniła ekran bez pustego pasa pod spodem.
 import { Picture } from 'astro:assets';
 import { ArrowUpRight, Timer, Medal, Utensils, HeartPulse } from '@lucide/astro';
 import SectionHead from './SectionHead.astro';
@@ -149,6 +150,17 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
     grid.classList.add('stack'); // najpierw klasa (niższe zdjęcia), potem pomiar
     if (!fits(0)) return grid.classList.remove('stack');
     const withBar = !!progress && fits(progress.offsetHeight);
+    // Na wysokich telefonach karta wypełnia ekran: zdjęcie rośnie, aż dół karty dojdzie do paska postępu
+    // (albo do dołu ekranu), zamiast zostawiać pusty pas pod przypiętą kartą. Najwyżej do kwadratu.
+    const reserve = withBar && progress ? progress.offsetHeight + 8 : 12;
+    cards.forEach((c, i) => {
+      const ph = c.querySelector<HTMLElement>('.card-photo');
+      if (!ph) return;
+      const room = Math.floor(innerHeight - top(i) - reserve - (c.offsetHeight - ph.offsetHeight));
+      if (room <= ph.offsetHeight) return;
+      ph.style.aspectRatio = 'auto';
+      ph.style.height = `${Math.min(ph.offsetWidth, room)}px`;
+    });
     const num = progress?.querySelector<HTMLElement>('[data-stack-n]');
     const name = progress?.querySelector<HTMLElement>('[data-stack-name]');
     const segs = [...(progress?.querySelectorAll<HTMLElement>('.stack-seg') ?? [])];

@@ -123,14 +123,14 @@ const start = (d: (typeof distances)[number]) => d.facts.find((f) => f.label ===
 <script>
   // Pasek „Zapisz się” na telefonie. Widoczny tylko w dwóch miejscach, gdzie niczego nie zasłania:
   // - po hero, zanim zaczną się karty dystansów (pasek liczb),
-  // - na trasie, w trakcie przesuwania odcinków w bok (Route.astro ustawia data-bar: „show” do mety, potem „hide”).
+  // - na trasie, gdy odcinki pętli są na ekranie.
   // Od Ściany Płaczu w dół już się nie pokazuje: dalej są własne przyciski zapisu, a na końcu sekcja zapisów.
   // Liczone z położenia elementów przy każdej klatce przewijania, bez IntersectionObserver: zachowuje się tak samo
   // na każdym telefonie, także przy szybkim przewijaniu z rozpędu i zmianie wysokości paska adresu.
   const bar = document.querySelector<HTMLElement>('.signup-bar');
   const hero = document.querySelector<HTMLElement>('.hero');
   const cards = document.querySelector<HTMLElement>('#dystanse');
-  const route = document.querySelector<HTMLElement>('.route-pin');
+  const route = document.querySelector<HTMLElement>('#trasa .stations');
   if (bar && hero) {
     const onScreen = (el: HTMLElement) => {
       const r = el.getBoundingClientRect();
@@ -141,13 +141,12 @@ const start = (d: (typeof distances)[number]) => d.facts.find((f) => f.label ===
       frame = 0;
       const pastHero = hero.getBoundingClientRect().bottom < 0;
       const beforeCards = !!cards && cards.getBoundingClientRect().top >= innerHeight;
-      const onRoute = !!route && route.dataset.bar === 'show' && onScreen(route);
+      const onRoute = !!route && onScreen(route);
       bar.dataset.shown = String(pastHero && (beforeCards || onRoute));
     };
     const queue = () => { if (!frame) frame = requestAnimationFrame(sync); };
     addEventListener('scroll', queue, { passive: true });
     addEventListener('resize', queue);
-    addEventListener('signup-bar', queue);
     sync();
   }
 </script>
