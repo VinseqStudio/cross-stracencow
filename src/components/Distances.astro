@@ -1,21 +1,24 @@
 ---
-// Dystanse („Wybierz swoje wyzwanie”): cztery karty biegów z ceną, trudnością, faktami i przyciskiem zapisu.
+// Dystanse („Wybierz swoje wyzwanie”): karty biegów z ceną, trudnością, faktami i przyciskiem zapisu.
+// Biegi główne (15, 10, 5 km) mają ceny w trzech pulach: na karcie aktualna cena i pasek pul.
+// Desktop: trzy biegi główne w rzędzie, pod nimi sztafeta i Cross Junior (szersze karty).
 // Obok nagłówka: ramka „W każdym pakiecie startowym”. Dane kart: `distances` w src/data/event.ts.
 // Telefon: karty układają się w stos (sticky), tylko gdy każda mieści się cała na ekranie (skrypt na dole).
 // Na wysokim ekranie zdjęcie w karcie rośnie, żeby karta wypełniła ekran bez pustego pasa pod spodem.
 import { Picture } from 'astro:assets';
 import { ArrowUpRight, Timer, Medal, Utensils, HeartPulse } from '@lucide/astro';
 import SectionHead from './SectionHead.astro';
-import { distances, event } from '../data/event';
+import { distances, event, poolInfo, priceNow } from '../data/event';
 import { photo } from '../lib/photos';
 
 const levels = ['Dla każdego', 'Umiarkowany', 'Wymagający', 'Trudny', 'Straceńczy'];
 const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copper: 'var(--medal-copper)' };
+const current = event.pools.current;
 ---
 
 <section id="dystanse" class="section-pad bg-bg" aria-labelledby="dystanse-title">
   <div class="wrap grid gap-10 lg:gap-12">
-    <SectionHead id="dystanse-title" title="Wybierz swoje wyzwanie" lead="Pięć kilometrów, dziesięć albo sztafeta z przyjaciółmi. Na mecie każdy dostaje medal Finisher.">
+    <SectionHead id="dystanse-title" title="Wybierz swoje wyzwanie" lead={`Pięć, dziesięć albo piętnaście kilometrów, sztafeta z przyjaciółmi i biegi dla dzieci. Na biegach głównych pierwsze ${event.pools.sizes[0]} miejsc w najniższej cenie. Na mecie każdy dostaje medal Finisher.`}>
       <div class="grid w-full gap-3 rounded-sm bg-surface p-5 lg:w-[400px]">
         <p class="font-condensed text-[15px] font-bold tracking-[0.06em] uppercase">W każdym pakiecie startowym</p>
         <ul class="grid grid-cols-2 gap-x-4 gap-y-3 text-[15px] leading-5">
@@ -31,12 +34,18 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
       </div>
     </SectionHead>
 
-    <div class="cards grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+    <div class="cards grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-6">
       {distances.map((d, i) => (
         <>
         <article
           id={`dystans-${d.id}`}
-          class:list={['card relative flex flex-col rounded-sm bg-raised', d.first ? 'border-2 border-fg' : 'border border-line']}
+          class:list={[
+            'card relative flex flex-col rounded-sm bg-raised',
+            d.first ? 'border-2 border-fg' : 'border border-line',
+            // Biegi główne po trzy w rzędzie, reszta po dwie; ostatnia karta na tablecie na całą szerokość.
+            d.pools ? 'lg:col-span-2' : 'is-wide lg:col-span-3',
+            i === distances.length - 1 && (distances.length % 2 === 1) && 'sm:col-span-2',
+          ]}
           style={`--tier:${tierVar[d.tier]};--i:${i}`}
         >
           {d.first && (
@@ -48,8 +57,8 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
             <Picture
               src={photo(d.photo)}
               alt={d.alt}
-              widths={[360, 560, 720]}
-              sizes="(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw"
+              widths={[360, 560, 720, 960]}
+              sizes={d.pools ? '(min-width: 1024px) 400px, (min-width: 640px) calc(50vw - 36px), calc(100vw - 32px)' : '(min-width: 1024px) 610px, (min-width: 640px) calc(50vw - 36px), calc(100vw - 32px)'}
               formats={['avif', 'webp']}
               class="size-full object-cover"
             />
@@ -62,7 +71,10 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
                 </h3>
                 <p class="font-display text-[44px] leading-[0.95] whitespace-nowrap uppercase lg:text-[clamp(36px,3.3vw,48px)]">{d.distance}</p>
               </div>
-              <p class="pb-1 text-right font-display text-[26px] leading-none whitespace-nowrap tabular-nums">{d.price}</p>
+              <p class="grid justify-items-end gap-1 pb-1 text-right">
+                {d.pools && <span class="font-condensed text-[13px] leading-none font-bold tracking-[0.06em] text-accent uppercase">{poolInfo(current).name}</span>}
+                <span class="font-display text-[26px] leading-none whitespace-nowrap tabular-nums">{priceNow(d)} zł</span>
+              </p>
             </div>
             <span class="inline-flex items-center gap-2" role="img" aria-label={`Trudność ${d.difficulty} na 5: ${levels[d.difficulty - 1]}`}>
               <span class="inline-flex gap-[3px]" aria-hidden="true">
@@ -73,6 +85,23 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
               <span class="text-[14px] font-semibold" aria-hidden="true">{levels[d.difficulty - 1]}</span>
             </span>
             <p class="text-[15px] leading-[22px]">{d.description}</p>
+            {d.pools && (
+              /* Pule cenowe: zamknięte przekreślone, aktualna wyróżniona, następne czekają. */
+              <ol class="pools grid grid-cols-3 gap-1" aria-label="Ceny w pulach">
+                {d.pools.map((price, p) => {
+                  const info = poolInfo(p);
+                  const state = p < current ? 'closed' : p === current ? 'now' : 'next';
+                  return (
+                    <li class="pool rounded-sm px-2 py-1.5" data-state={state}>
+                      <span class="block font-condensed text-[12px] leading-tight font-bold tracking-[0.04em] uppercase">{info.name}</span>
+                      <span class="block font-display text-[20px] leading-none tabular-nums">{price} zł</span>
+                      <span class="block text-[12px] leading-tight">miejsca {info.seats}</span>
+                      <span class="sr-only">{state === 'now' ? ' (teraz w sprzedaży)' : state === 'closed' ? ' (zamknięta)' : ''}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
             <ul class="mt-auto grid border-t border-line text-[14px] leading-5">
               {[...d.facts, { label: 'Limit', value: d.limit }].map((f) => (
                 <li class="flex justify-between gap-3 border-b border-line py-1.5 sm:py-2">
@@ -115,6 +144,14 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
 
 <style>
   /* Pasek postępu stosu kart (telefon). Segment zapala się, gdy karta wchodzi na stos. */
+  /* Pule cenowe na karcie biegu głównego. */
+  .pool { background: var(--surface-sunken); color: var(--text); }
+  .pool[data-state='now'] { background: var(--text); color: var(--bg); }
+  .pool[data-state='closed'] { color: var(--text-muted); }
+  .pool[data-state='closed'] .font-display { text-decoration: line-through; text-decoration-thickness: 2px; }
+  /* Szersze karty (sztafeta, Cross Junior) na desktopie: niższe zdjęcie, żeby rząd nie był wyższy od biegów głównych. */
+  @media (min-width: 1024px) { .card.is-wide .card-photo { aspect-ratio: 21 / 9; } }
+
   .stack-progress { transform: translateY(100%); transition: transform 0.3s var(--ease-out-quint); padding-bottom: env(safe-area-inset-bottom); }
   .stack-progress[data-shown='true'] { transform: none; }
   .stack-seg { display: block; width: 28px; height: 6px; background: var(--surface-sunken); transform: skewX(-12deg); transition: background-color 0.3s ease, transform 0.3s var(--ease-out-quint); }
