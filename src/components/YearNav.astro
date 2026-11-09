@@ -26,8 +26,13 @@ const { years, label = 'Lata', current, sticky = true } = Astro.props;
 
 <script>
   // Bieżący rok wjeżdża w widok paska, gdy lat jest więcej niż mieści ekran.
+  // Pomiar w callbacku IntersectionObserver: układ jest wtedy już policzony, więc odczyt nie wymusza przeliczenia strony.
   document.querySelectorAll<HTMLElement>('.year-nav [aria-current="page"]').forEach((a) => {
-    const ul = a.closest('ul')!;
-    ul.scrollLeft = a.offsetLeft - ul.clientWidth / 2 + a.offsetWidth / 2;
+    const io = new IntersectionObserver(() => {
+      io.disconnect();
+      const ul = a.closest('ul')!;
+      ul.scrollLeft = a.offsetLeft - ul.clientWidth / 2 + a.offsetWidth / 2;
+    });
+    io.observe(a);
   });
 </script>

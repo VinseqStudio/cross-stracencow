@@ -1,7 +1,9 @@
 ---
 // Górny pasek: logo, nawigacja (od 1024 px), przycisk zapisu. Na telefonie menu pełnoekranowe
 // z „Zapisz się na start”, „Kontakt z biurem” i danymi biura.
+import { Picture } from 'astro:assets';
 import { Menu, X, ArrowUpRight } from '@lucide/astro';
+import logo from '../assets/brand/logo.webp';
 import { event } from '../data/event';
 
 interface Props { current?: string }
@@ -16,10 +18,10 @@ const links = [
 ];
 ---
 
-<header id="top" class="site-header sticky top-0 z-50 border-b border-line bg-bg" data-open="false">
+<header class="site-header sticky top-0 z-50 border-b border-line bg-bg" data-open="false">
   <div class="wrap flex h-16 items-center justify-between gap-6 lg:h-[72px]">
     <a href="/" class="block shrink-0" aria-label="Cross Straceńców Głogów, strona główna">
-      <img src="/logo.webp" alt="" width="68" height="48" class="h-12 w-auto lg:h-14" />
+      <Picture src={logo} alt="" width={68} height={48} densities={[1, 2, 3]} formats={['avif', 'webp']} quality={70} loading="eager" class="h-12 w-auto lg:h-14" />
     </a>
     <nav aria-label="Główna" class="hidden lg:block">
       <ul class="flex gap-8">

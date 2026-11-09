@@ -4,6 +4,8 @@
 import { Picture, getImage } from 'astro:assets';
 import { ArrowDown } from '@lucide/astro';
 import Base from '../../layouts/Base.astro';
+import { lcpPreload } from '../../lib/lcp';
+import { breadcrumbs, ids, venueNode } from '../../lib/seo';
 import YearNav from '../../components/YearNav.astro';
 import { photo, photosOf } from '../../lib/photos';
 import { editions } from '../../../db/data/editions';
@@ -25,8 +27,16 @@ const years = (
 const count = years.reduce((s, y) => s + y.photos.length, 0);
 // Na start 9 zdjęć z roku (duże + 8 małych wypełnia siatkę bez dziur), reszta dopiero po kliknięciu.
 const SHOWN = 9;
+// Rozmiary w siatce (kolumny minus odstępy i marginesy), żeby przeglądarka brała plik najbliższy wyświetlanej szerokości.
+const BIG_WIDTHS = [480, 640, 800, 1200];
+const BIG_SIZES = '(min-width: 1024px) 620px, calc(100vw - 32px)';
+const TILE_WIDTHS = [240, 360, 480, 640];
+const TILE_SIZES = '(min-width: 1024px) 310px, (min-width: 640px) calc(33vw - 24px), calc(50vw - 20px)';
 
 // Kolaż w tle nagłówka: ten sam układ co w wynikach (3 kolumny na telefonie, 5 na komputerze).
+// Pierwszy (największy) kafel kolażu to LCP strony: ten sam obraz idzie do preloadu w <head>.
+const COLLAGE_WIDTHS = [360, 600, 900];
+const COLLAGE_SIZES = '(min-width: 1024px) 40vw, 66vw';
 const collage = [
   { rel: '2022/2022-06.jpg', cls: 'col-span-2 row-span-2' },
   { rel: '2025/2025-05.jpg', cls: '' },
@@ -40,26 +50,32 @@ const first = years.at(-1)!.year;
 // Po prawej, w miejscu zwycięzców z wyników: trzy najnowsze albumy.
 const latest = years.slice(0, 3);
 // Dane strukturalne: okruszki (Google pokazuje ścieżkę w wynikach) i opis kolekcji.
+const site = Astro.site!.href.replace(/\/$/, '');
+// Dane strukturalne: okruszki i galeria (strona typu CollectionPage w Base.astro, tu galeria z albumami lat).
 const jsonLd = [
+  breadcrumbs(site, [['Cross Straceńców', '/'], ['Galeria', '/galeria/']]),
   {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Cross Straceńców', item: new URL('/', Astro.site).href },
-      { '@type': 'ListItem', position: 2, name: 'Galeria', item: new URL('/galeria/', Astro.site).href },
-    ],
+    '@type': 'ImageGallery',
+    '@id': `${site}/galeria/#galeria`,
+    name: 'Galeria Crossu Straceńców',
+    url: `${site}/galeria/`,
+    description: `${count} zdjęć z Crossu Straceńców w Głogowie z ${years.length} lat: rowy z wodą, błoto, Ściana Płaczu, meta i biegi dzieci.`,
+    inLanguage: 'pl-PL',
+    about: { '@type': 'SportsEvent', '@id': ids(site).event, name: 'Cross Straceńców', location: venueNode(site) },
+    publisher: { '@id': ids(site).organizer },
+    hasPart: years.map((y) => ({ '@type': 'ImageGallery', name: `Cross Straceńców ${y.year}`, url: `${site}/galeria/#rok-${y.year}`, numberOfItems: y.photos.length })),
   },
-  { '@context': 'https://schema.org', '@type': 'ImageGallery', name: 'Galeria', url: new URL('/galeria/', Astro.site).href, description: `Zdjęcia z Crossu Straceńców w Głogowie z ${years.length} lat.`, inLanguage: 'pl-PL' },
 ];
+const lcpImage = await lcpPreload(photo(collage[0].rel), COLLAGE_WIDTHS, COLLAGE_SIZES);
 ---
 
-<Base title="Galeria" description={`${count} zdjęć z Crossu Straceńców w Głogowie z ${years.length} lat: rowy z wodą, błoto, meta i biegi dzieci.`} current="galeria" jsonLd={jsonLd}>
+<Base title="Galeria" description={`${count} zdjęć z Crossu Straceńców w Głogowie z ${years.length} lat: rowy z wodą, błoto, meta i biegi dzieci.`} current="galeria" jsonLd={jsonLd} lcpImage={lcpImage} pageType="CollectionPage">
   <section class="gallery-hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="galeria-h1">
     {/* Kafle ukryte na telefonie (hidden lg:block) mają loading="lazy": przeglądarka nie pobiera ich, dopóki są niewidoczne. */}
     <div class="absolute inset-0 -z-10 grid auto-rows-fr grid-cols-3 gap-1 lg:grid-cols-5" aria-hidden="true">
       {collage.map((c, i) => (
         <div class:list={['collage-tile overflow-hidden', c.cls]} style={`--i:${i}`}>
-          <Picture src={photo(c.rel)} alt="" widths={[360, 600, 900]} sizes="(min-width: 1024px) 40vw, 66vw" formats={['avif', 'webp']} loading={c.cls.includes('hidden') ? 'lazy' : 'eager'} fetchpriority={i === 0 ? 'high' : 'auto'} class="size-full object-cover saturate-[.8]" />
+          <Picture src={photo(c.rel)} alt="" widths={COLLAGE_WIDTHS} sizes={COLLAGE_SIZES} formats={['avif', 'webp']} loading={c.cls.includes('hidden') ? 'lazy' : 'eager'} fetchpriority={i === 0 ? 'high' : 'auto'} class="size-full object-cover saturate-[.8]" />
         </div>
       ))}
       <div class="absolute inset-0 bg-[linear-gradient(0deg,#121211_0%,rgba(18,18,17,0.78)_40%,rgba(18,18,17,0.45)_100%)]"></div>
@@ -116,8 +132,8 @@ const jsonLd = [
                   <Picture
                     src={p.img}
                     alt={p.alt}
-                    widths={i === 0 ? [480, 800, 1200] : [300, 480, 640]}
-                    sizes={i === 0 ? '(min-width: 1024px) 620px, 100vw' : '(min-width: 1024px) 310px, (min-width: 640px) 33vw, 50vw'}
+                    widths={i === 0 ? BIG_WIDTHS : TILE_WIDTHS}
+                    sizes={i === 0 ? BIG_SIZES : TILE_SIZES}
                     formats={['avif', 'webp']}
                     class="size-full object-cover"
                   />
@@ -132,7 +148,7 @@ const jsonLd = [
                 {y.photos.slice(SHOWN).map((p) => (
                   <li>
                     <a href={p.full.src} data-pswp-width={p.full.attributes.width} data-pswp-height={p.full.attributes.height} class="photo-zoom block aspect-[3/2] h-full" aria-label={`Powiększ: ${p.alt}`}>
-                      <Picture src={p.img} alt={p.alt} widths={[300, 480, 640]} sizes="(min-width: 1024px) 310px, (min-width: 640px) 33vw, 50vw" formats={['avif', 'webp']} loading="lazy" class="size-full object-cover" />
+                      <Picture src={p.img} alt={p.alt} widths={TILE_WIDTHS} sizes={TILE_SIZES} formats={['avif', 'webp']} loading="lazy" class="size-full object-cover" />
                     </a>
                   </li>
                 ))}

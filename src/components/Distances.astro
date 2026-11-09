@@ -2,6 +2,7 @@
 // Dystanse („Wybierz swoje wyzwanie”): cztery karty biegów z ceną, trudnością, faktami i przyciskiem zapisu.
 // Obok nagłówka: ramka „W każdym pakiecie startowym”. Dane kart: `distances` w src/data/event.ts.
 // Telefon: karty układają się w stos (sticky), tylko gdy każda mieści się cała na ekranie (skrypt na dole).
+// Na wysokim ekranie zdjęcie w karcie rośnie, żeby karta wypełniła ekran bez pustego pasa pod spodem.
 import { Picture } from 'astro:assets';
 import { ArrowUpRight, Timer, Medal, Utensils, HeartPulse } from '@lucide/astro';
 import SectionHead from './SectionHead.astro';
@@ -149,6 +150,17 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
     grid.classList.add('stack'); // najpierw klasa (niższe zdjęcia), potem pomiar
     if (!fits(0)) return grid.classList.remove('stack');
     const withBar = !!progress && fits(progress.offsetHeight);
+    // Na wysokich telefonach karta wypełnia ekran: zdjęcie rośnie, aż dół karty dojdzie do paska postępu
+    // (albo do dołu ekranu), zamiast zostawiać pusty pas pod przypiętą kartą. Najwyżej do kwadratu.
+    const reserve = withBar && progress ? progress.offsetHeight + 8 : 12;
+    // Najpierw wszystkie pomiary, potem zapisy wysokości: jedno przeliczenie układu zamiast jednego na kartę.
+    const grow = cards.map((c, i) => {
+      const ph = c.querySelector<HTMLElement>('.card-photo');
+      if (!ph) return null;
+      const room = Math.floor(innerHeight - top(i) - reserve - (c.offsetHeight - ph.offsetHeight));
+      return room > ph.offsetHeight ? { ph, h: Math.min(ph.offsetWidth, room) } : null;
+    });
+    grow.forEach((g) => { if (!g) return; g.ph.style.aspectRatio = 'auto'; g.ph.style.height = `${g.h}px`; });
     const num = progress?.querySelector<HTMLElement>('[data-stack-n]');
     const name = progress?.querySelector<HTMLElement>('[data-stack-name]');
     const segs = [...(progress?.querySelectorAll<HTMLElement>('.stack-seg') ?? [])];
@@ -157,17 +169,18 @@ const tierVar = { gold: 'var(--medal-gold)', silver: 'var(--medal-silver)', copp
     let frame = 0;
     const update = () => {
       frame = 0;
+      // Odczyty (położenie kart i siatki) przed zapisami stylów, żeby nie wymuszać przeliczeń w pętli.
+      const tops = cards.map((c) => c.getBoundingClientRect().top);
+      const g = grid.getBoundingClientRect();
       for (let i = 0; i < cards.length - 1; i++) {
         // 0, gdy następna karta dopiero wchodzi od dołu ekranu; 1, gdy dojechała na swoje miejsce w stosie.
-        const next = cards[i + 1].getBoundingClientRect().top;
-        const p = Math.min(1, Math.max(0, (innerHeight - next) / (innerHeight - top(i + 1))));
+        const p = Math.min(1, Math.max(0, (innerHeight - tops[i + 1]) / (innerHeight - top(i + 1))));
         cards[i].style.transform = p ? `scale(${1 - 0.06 * p})` : '';
         cards[i].style.filter = p ? `brightness(${1 - 0.18 * p})` : '';
       }
       if (!withBar || !progress) return;
       // Bieżąca karta: ostatnia, której góra minęła połowę ekranu.
-      const current = Math.max(0, cards.filter((c) => c.getBoundingClientRect().top < innerHeight * 0.5).length - 1);
-      const g = grid.getBoundingClientRect();
+      const current = Math.max(0, tops.filter((t) => t < innerHeight * 0.5).length - 1);
       progress.dataset.shown = String(g.top < innerHeight * 0.5 && g.bottom > innerHeight);
       if (current === shown) return;
       shown = current;

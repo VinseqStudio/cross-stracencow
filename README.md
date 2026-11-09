@@ -3,6 +3,9 @@
 Statyczna strona biegu w Głogowie: strona główna (lejek do zapisów), galeria z 9 edycji i wyniki
 (pełne tabele 2022–2025). Wszystko powstaje przy budowaniu; na serwerze leżą gotowe pliki HTML.
 
+**Reguły dla każdej zmiany (zdjęcia tylko AVIF/WebP, wydajność, SEO, dane dla agentów AI): [AGENTS.md](AGENTS.md).**
+Realizacja: [Vinseq Studio](https://vinseqstudio.com).
+
 ## Stos
 
 | Co | Czym | Po co |
@@ -37,12 +40,16 @@ src/
     galeria/           galeria zdjęć z lat
     wyniki/            archiwum, strona roku i JSON roku
     llms.txt.ts        opis strony dla agentów AI
+    404.astro          strona „nie ma takiej strony” (noindex)
   components/          sekcje strony; każdy plik ma na górze komentarz, co robi
-  lib/                 zdjęcia (photos.ts) i odczyt wyników z bazy (results.ts)
+  lib/                 zdjęcia (photos.ts), wyniki z bazy (results.ts), dane strukturalne JSON-LD (seo.ts),
+                       preload obrazu LCP (lcp.ts), zdjęcie hero (hero.ts)
   styles/global.css    tokeny, fonty, narzędzia (wrap, btn, trail…), wejście nagłówków, skala strony
 db/                    schemat, seed, edycje i wyniki w JSON
 scripts/               import wyników z systemów pomiaru czasu
-public/                logo, favicon, obraz OG, fonty, robots.txt
+public/                favicon, obraz OG, logo do danych strukturalnych, fonty, robots.txt
+vercel.json            cache (immutable dla /_astro i /fonts), nagłówki bezpieczeństwa, przekierowania starych adresów
+AGENTS.md              reguły projektu (CLAUDE.md wskazuje na ten plik)
 ```
 
 ## Gdzie co edytować

@@ -4,6 +4,8 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import type { LcpImage } from '../lib/lcp';
+import { siteNodes, pageNode, stripContext } from '../lib/seo';
 
 interface Props {
   title: string;
@@ -12,10 +14,30 @@ interface Props {
   jsonLd?: object | object[];
   current?: string;
   footerEdge?: string;
+  /** Obraz LCP pierwszego ekranu (srcset z getImage). Preload na samym początku <head>, przed wklejonym CSS,
+      żeby przeglądarka zaczęła go pobierać z pierwszym pakietem HTML. */
+  lcpImage?: LcpImage;
+  /** Typ strony w schema.org (domyślnie WebPage), np. CollectionPage dla archiwów. */
+  pageType?: string;
+  /** O czym jest strona (węzeł albo {'@id': ...}), np. wydarzenie na stronie głównej. */
+  about?: object;
+  /** Strona bez indeksowania (np. 404). */
+  noindex?: boolean;
 }
-const { title, description, image = '/og.jpg', jsonLd, current, footerEdge = 'var(--bg)' } = Astro.props;
+const { title, description, image = '/og.jpg', jsonLd, current, footerEdge = 'var(--bg)', lcpImage, pageType, about, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const fullTitle = title.includes('Cross Straceńców') ? title : `${title} | Cross Straceńców Głogów`;
+const site = Astro.site!.href.replace(/\/$/, '');
+const ogImage = new URL(image, Astro.site).href;
+// Jeden graf JSON-LD na stronę: organizator i serwis (wspólne), bieżąca strona i dane przekazane przez stronę.
+const graph = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    ...siteNodes(site),
+    pageNode(site, { url: canonical.href, title: fullTitle, description, type: pageType, image: ogImage, about }),
+    ...stripContext([jsonLd ?? []].flat()),
+  ],
+};
 ---
 
 <!doctype html>
@@ -23,23 +45,33 @@ const fullTitle = title.includes('Cross Straceńców') ? title : `${title} | Cro
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {lcpImage && <link rel="preload" as="image" type={lcpImage.type} imagesrcset={lcpImage.srcset} imagesizes={lcpImage.sizes} fetchpriority="high" />}
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex
+      ? <meta name="robots" content="noindex, follow" />
+      : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />}
+    {!noindex && <link rel="canonical" href={canonical} />}
     <meta name="theme-color" content="#181817" />
+    <meta name="geo.region" content="PL-DS" />
+    <meta name="geo.placename" content="Głogów" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pl_PL" />
     <meta property="og:site_name" content="Cross Straceńców" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL(image, Astro.site)} />
+    <meta property="og:image" content={ogImage} />
+    {image === '/og.jpg' && <><meta property="og:image:type" content="image/jpeg" /><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /></>}
+    <meta property="og:image:alt" content="Biegacze na trasie Crossu Straceńców w Głogowie" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link rel="alternate" type="text/markdown" title="Opis dla agentów AI" href="/llms.txt" />
-    <link rel="preload" href="/logo.webp" as="image" />
     {/* Dwa fonty z pierwszego ekranu: tytuł (Anton) i tekst (Barlow). Reszta dociąga się sama. */}
     <link rel="preload" href="/fonts/anton-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -66,7 +98,7 @@ const fullTitle = title.includes('Cross Straceńców') ? title : `${title} | Cro
         addEventListener('resize', () => { if (!frame) frame = requestAnimationFrame(fit); });
       })();
     </script>
-    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    <script type="application/ld+json" set:html={JSON.stringify(graph)} />
     <slot name="head" />
   </head>
   <body class="bg-bg text-fg">

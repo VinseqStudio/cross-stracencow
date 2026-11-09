@@ -284,10 +284,13 @@
 @keyframes enter-line { from { transform: translateY(105%); } }
 @keyframes enter-rise { from { opacity: 0; transform: translateY(24px); } }
 @keyframes enter-tile { from { opacity: 0; transform: scale(1.06); } }
+@keyframes enter-tile-lcp { from { transform: scale(1.06); } }
 @media (prefers-reduced-motion: no-preference) {
   [data-line] { animation: enter-line 0.9s var(--ease-out-quint) both; animation-delay: calc(var(--i, 0) * 120ms); }
   [data-enter] { animation: enter-rise 0.7s var(--ease-out-quint) both; animation-delay: calc(var(--enter-start, 0.3s) + var(--i, 0) * 80ms); }
   .collage-tile { animation: enter-tile 0.8s var(--ease-out-quint) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  /* Pierwszy kafel to LCP strony: tylko przybliżenie, bez zanikania, żeby był widoczny od pierwszej klatki. */
+  .collage-tile:first-child { animation-name: enter-tile-lcp; }
 }
 
 @media (prefers-reduced-motion: reduce) {

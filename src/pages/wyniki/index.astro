@@ -4,6 +4,8 @@ import { Picture } from 'astro:assets';
 import { ArrowRight } from '@lucide/astro';
 import { db, Edition } from 'astro:db';
 import Base from '../../layouts/Base.astro';
+import { lcpPreload } from '../../lib/lcp';
+import { breadcrumbs } from '../../lib/seo';
 import YearNav from '../../components/YearNav.astro';
 import { photo } from '../../lib/photos';
 import { winnersOf, yearsWithResults, yearPhoto } from '../../lib/results';
@@ -17,6 +19,9 @@ const fmt = (iso?: string | null) =>
 const total = years.reduce((s, y) => s + y.n, 0);
 
 // Kolaż w tle nagłówka, jak w galerii: kadry z mety i trasy z lat, które mają wyniki.
+// Pierwszy (największy) kafel kolażu to LCP strony: ten sam obraz idzie do preloadu w <head>.
+const COLLAGE_WIDTHS = [360, 600, 900];
+const COLLAGE_SIZES = '(min-width: 1024px) 40vw, 66vw';
 const collage = [
   { rel: '2025/2025-09.jpg', cls: 'col-span-2 row-span-2' },
   { rel: '2022/2022-13.jpg', cls: '' },
@@ -27,26 +32,28 @@ const collage = [
   { rel: '2024/2024-05.jpg', cls: 'hidden lg:block' },
 ];
 // Dane strukturalne: okruszki (Google pokazuje ścieżkę w wynikach) i opis kolekcji.
+const site = Astro.site!.href.replace(/\/$/, '');
+// Dane strukturalne: okruszki i lista lat z wynikami (każdy rok to osobny zbiór danych na stronie roku).
 const jsonLd = [
+  breadcrumbs(site, [['Cross Straceńców', '/'], ['Wyniki', '/wyniki/']]),
   {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Cross Straceńców', item: new URL('/', Astro.site).href },
-      { '@type': 'ListItem', position: 2, name: 'Wyniki', item: new URL('/wyniki/', Astro.site).href },
-    ],
+    '@type': 'ItemList',
+    '@id': `${site}/wyniki/#lata`,
+    name: 'Wyniki Crossu Straceńców według lat',
+    numberOfItems: years.length,
+    itemListElement: years.map((y, i) => ({ '@type': 'ListItem', position: i + 1, name: `Wyniki ${y.year} (${y.n} osób na mecie)`, url: `${site}/wyniki/${y.year}/` })),
   },
-  { '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Wyniki', url: new URL('/wyniki/', Astro.site).href, description: `Wyniki Crossu Straceńców z lat ${years.at(-1)!.year}–${latest}.`, inLanguage: 'pl-PL' },
 ];
+const lcpImage = await lcpPreload(photo(collage[0].rel), COLLAGE_WIDTHS, COLLAGE_SIZES);
 ---
 
-<Base title="Wyniki" description={`Wyniki Crossu Straceńców w Głogowie z lat ${years.at(-1)!.year}–${latest}: biegi Złoty, Srebrny i Miedziowy oraz sztafety. ${total} osób na mecie.`} current="wyniki" jsonLd={jsonLd}>
+<Base title="Wyniki" description={`Wyniki Crossu Straceńców w Głogowie z lat ${years.at(-1)!.year}–${latest}: biegi Złoty, Srebrny i Miedziowy oraz sztafety. ${total} osób na mecie.`} current="wyniki" jsonLd={jsonLd} lcpImage={lcpImage} pageType="CollectionPage">
   <section class="results-hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="wyniki-h1">
     {/* Kafle ukryte na telefonie (hidden lg:block) mają loading="lazy": przeglądarka nie pobiera ich, dopóki są niewidoczne. */}
     <div class="absolute inset-0 -z-10 grid auto-rows-fr grid-cols-3 gap-1 lg:grid-cols-5" aria-hidden="true">
       {collage.map((c, i) => (
         <div class:list={['collage-tile overflow-hidden', c.cls]} style={`--i:${i}`}>
-          <Picture src={photo(c.rel)} alt="" widths={[360, 600, 900]} sizes="(min-width: 1024px) 40vw, 66vw" formats={['avif', 'webp']} loading={c.cls.includes('hidden') ? 'lazy' : 'eager'} fetchpriority={i === 0 ? 'high' : 'auto'} class="size-full object-cover saturate-[.8]" />
+          <Picture src={photo(c.rel)} alt="" widths={COLLAGE_WIDTHS} sizes={COLLAGE_SIZES} formats={['avif', 'webp']} loading={c.cls.includes('hidden') ? 'lazy' : 'eager'} fetchpriority={i === 0 ? 'high' : 'auto'} class="size-full object-cover saturate-[.8]" />
         </div>
       ))}
       <div class="absolute inset-0 bg-[linear-gradient(0deg,#121211_0%,rgba(18,18,17,0.78)_40%,rgba(18,18,17,0.45)_100%)]"></div>
