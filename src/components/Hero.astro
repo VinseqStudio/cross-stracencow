@@ -1,9 +1,11 @@
 ---
 // Pierwszy ekran strony głównej: tytuł, rotator przeszkód, termin, przyciski i odliczanie do startu.
-// Wejście tytułu jest w CSS (global.css: [data-line], [data-enter]); skrypt na dole obsługuje tylko rotator i licznik.
+// Wejście tytułu jest w CSS (global.css: [data-line], [data-enter]); skrypt na dole obsługuje zdjęcia w tle,
+// rotator przeszkód i licznik. Zdjęcia w tle zmieniają się płynnie (lib/hero.ts): pierwsze to obraz LCP,
+// pozostałe czekają w <template> i doczytują się po jednym, dopiero po wczytaniu strony.
 import { Picture } from 'astro:assets';
 import { ArrowRight, ArrowUpRight } from '@lucide/astro';
-import { heroImage } from '../lib/hero';
+import { heroImage, heroSlides } from '../lib/hero';
 import { event } from '../data/event';
 
 // Licznik w HTML z dnia budowania; przeglądarka od razu podmienia go na aktualny.
@@ -22,16 +24,23 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
 
 <section class="hero relative isolate overflow-hidden bg-bg text-fg grain" data-theme="dark" aria-labelledby="hero-title">
   <div class="hero-media absolute inset-x-0 -top-[40%] -z-10 h-full overflow-hidden sm:-top-[28%] lg:inset-0 lg:h-auto" aria-hidden="true">
-    <Picture
-      src={heroImage.src}
-      alt=""
-      widths={heroImage.widths}
-      sizes={heroImage.sizes}
-      formats={['avif', 'webp']}
-      loading="eager"
-      fetchpriority="high"
-      class="hero-img size-full object-cover object-[46%_50%] saturate-[.85] lg:object-[50%_40%]"
-    />
+    {heroSlides.map((s, i) => {
+      const slide = (
+        <div class:list={['hero-slide', i === 0 && 'is-active']} data-move={s.move} style={`--pos-m:${s.pos[0]};--pos-d:${s.pos[1]};--shift-m:${s.shift}`}>
+          <Picture
+            src={s.src}
+            alt=""
+            widths={heroImage.widths}
+            sizes={heroImage.sizes}
+            formats={['avif', 'webp']}
+            loading="eager"
+            fetchpriority={i === 0 ? 'high' : 'low'}
+            class="hero-img size-full object-cover saturate-[.85]"
+          />
+        </div>
+      );
+      return i === 0 ? slide : <template class="hero-next">{slide}</template>;
+    })}
   </div>
 
   <div class="wrap flex min-h-[calc(100svh-64px)] flex-col justify-end pt-[18svh] pb-6 sm:pt-[30svh] sm:pb-8 lg:min-h-[calc(100svh/var(--page-zoom)-72px)] lg:pt-16 lg:pb-12">
@@ -42,9 +51,9 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
     </h1>
 
     <p class="obstacles mt-3 font-condensed text-[22px] leading-tight font-bold sm:mt-5 sm:text-[28px] lg:mt-6 lg:text-[32px]" data-enter style="--i:1">
-      <span class="sr-only">5 albo 10 km przez {obstacles.join(', ')}.</span>
+      <span class="sr-only">5, 10 albo 15 km przez {obstacles.join(', ')}.</span>
       <span aria-hidden="true" class="inline-flex flex-wrap items-start gap-x-[0.3em]">
-        <span class="text-fg/80">5 albo 10 km przez</span>
+        <span class="text-fg/80">5, 10 albo 15 km przez</span>
         <span class="rotator relative inline-grid shrink-0 overflow-hidden pb-[0.12em]">
           {obstacles.map((o, i) => (
             <span class:list={['rotator-word col-start-1 row-start-1 whitespace-nowrap text-fg', i > 0 && 'is-waiting']}>{o}</span>
@@ -88,12 +97,24 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
   @media (min-width: 1024px) { .hero-title { font-size: clamp(84px, 7.4vw, 120px); } }
   .hero-title .line { display: block; overflow: hidden; padding-bottom: 0.04em; }
 
-  /* Zdjęcie powoli „oddycha”, żeby hero nie stało w miejscu. */
-  .hero-img { transform-origin: 60% 40%; animation: drift 26s ease-in-out infinite alternate; }
-  @keyframes drift {
-    from { transform: scale(1) translate3d(0, 0, 0); }
-    to { transform: scale(1.07) translate3d(-1.2%, -1%, 0); }
-  }
+  /* Zdjęcia w tle: kolejne przenikają się (opacity), a aktywne powoli „jedzie” (transform), każde w inną stronę.
+     Pierwsze (LCP) jest widoczne od początku: animujemy u niego tylko transform, nigdy opacity od zera. */
+  .hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1); }
+  .hero-slide.is-active { opacity: 1; }
+  .hero-slide.is-front { z-index: 1; }
+  .hero-slide :global(img) { object-position: var(--pos-m); transform-origin: 50% 45%; }
+  @media (min-width: 1024px) { .hero-slide :global(img) { object-position: var(--pos-d); } }
+  /* Telefon i tablet: tło zaczyna się nad ekranem, więc zdjęcie zsuwamy w dół o --shift-m (lib/hero.ts). */
+  @media (max-width: 1023px) { .hero-slide { translate: 0 var(--shift-m, 0%); } }
+  .hero-slide.is-active :global(img) { animation: 9s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
+  .hero-slide.is-active[data-move='in'] :global(img) { animation-name: move-in; }
+  .hero-slide.is-active[data-move='out'] :global(img) { animation-name: move-out; }
+  .hero-slide.is-active[data-move='left'] :global(img) { animation-name: move-left; }
+  .hero-slide.is-active[data-move='right'] :global(img) { animation-name: move-right; }
+  @keyframes move-in { from { transform: scale(1.02); } to { transform: scale(1.12) translate3d(-1%, -1%, 0); } }
+  @keyframes move-out { from { transform: scale(1.14); } to { transform: scale(1.03); } }
+  @keyframes move-left { from { transform: scale(1.1) translate3d(2.5%, 0, 0); } to { transform: scale(1.1) translate3d(-2.5%, 0, 0); } }
+  @keyframes move-right { from { transform: scale(1.1) translate3d(-2.5%, 0, 0); } to { transform: scale(1.1) translate3d(2.5%, 0, 0); } }
 
 
 
@@ -104,6 +125,7 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
     content: '';
     position: absolute;
     inset: 0;
+    z-index: 2; /* nad zdjęciami w tle (aktywne ma z-index: 1) */
     background: linear-gradient(180deg, rgba(18, 18, 17, 0.1) 0%, rgba(18, 18, 17, 0.2) 55%, rgba(18, 18, 17, 0.85) 82%, #121211 97%);
   }
   @media (min-width: 1024px) {
@@ -120,7 +142,7 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
   }
   @keyframes hero-trail { from { transform: skewX(-12deg) scaleX(0); } }
   @media (prefers-reduced-motion: reduce) {
-    .hero-img { animation: none; }
+    .hero-slide.is-active :global(img) { animation: none; }
   }
 </style>
 
@@ -130,6 +152,58 @@ const obstacles = ['rowy z wodą', 'błoto po kostki', 'piaszczyste podbiegi', '
   const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
   // Wejście hero (linie tytułu spod maski, reszta od dołu) jest w CSS, żeby tekst nie czekał na ten skrypt.
+
+  // Zdjęcia w tle: co 6 s następne przenika się z poprzednim. Start dopiero po wczytaniu strony (pierwsze zdjęcie
+  // to LCP i ma mieć łącze dla siebie). Następne zdjęcie doczytuje się cykl wcześniej i wchodzi dopiero, gdy jest
+  // gotowe (decode), więc nigdy nie mignie pusty kadr. Pauza, gdy hero jest poza ekranem albo karta w tle.
+  // Bez zmiany zdjęć: ograniczony ruch, tryb oszczędzania danych i bardzo wolne łącze.
+  const media = document.querySelector<HTMLElement>('.hero .hero-media');
+  const net = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  const slow = !!net && (net.saveData || /(^|-)2g$/.test(net.effectiveType ?? ''));
+  if (media && !reduce && !slow) {
+    const pending = [...media.querySelectorAll<HTMLTemplateElement>('template.hero-next')];
+    const slides = [media.querySelector<HTMLElement>('.hero-slide')!];
+    const SHOW = 6000;
+    const FADE = 1600;
+    let current = 0;
+    let visible = true;
+    let timer = 0;
+    // Wstawia kolejne zdjęcie z <template> do DOM (przeglądarka zaczyna je pobierać) i zwraca obietnicę gotowości.
+    const ready: Promise<unknown>[] = [];
+    const prepare = (i: number) => {
+      if (slides[i] || !pending[i - 1]) return;
+      const el = pending[i - 1].content.firstElementChild!.cloneNode(true) as HTMLElement;
+      media.insertBefore(el, pending[i - 1]);
+      slides[i] = el;
+      const img = el.querySelector('img')!;
+      ready[i] = img.decode().catch(() => undefined);
+    };
+    const total = pending.length + 1;
+    const next = async () => {
+      timer = 0;
+      const n = (current + 1) % total;
+      prepare(n);
+      await ready[n];
+      if (!visible || document.hidden) return; // wznowi schedule() po powrocie
+      const prev = slides[current];
+      const el = slides[n];
+      prev.classList.remove('is-front');
+      el.classList.add('is-active', 'is-front');
+      current = n;
+      prepare((n + 1) % total); // następne pobiera się, gdy to jest na ekranie
+      setTimeout(() => prev.classList.remove('is-active'), FADE + 50);
+      schedule();
+    };
+    const schedule = () => { if (!timer && visible && !document.hidden) timer = window.setTimeout(next, SHOW); };
+    const stop = () => { clearTimeout(timer); timer = 0; };
+    const start = () => {
+      prepare(1);
+      new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) schedule(); else stop(); }).observe(media);
+      document.addEventListener('visibilitychange', () => (document.hidden ? stop() : schedule()));
+    };
+    const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(start, { timeout: 2000 }) : setTimeout(start, 600));
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
+  }
 
   // Przeszkody: co 2,6 s nowe słowo wjeżdża od dołu, poprzednie wyjeżdża w górę.
   const words = [...document.querySelectorAll<HTMLElement>('.hero .rotator-word')];

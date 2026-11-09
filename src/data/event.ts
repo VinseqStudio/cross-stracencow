@@ -26,7 +26,20 @@ export const event = {
   },
   facebook: 'https://www.facebook.com/Cross-Stracencow-376557065776815/',
   feeFrom: '30 zł',
+  // Pule cenowe biegów głównych (15, 10 i 5 km): pierwsze 50 miejsc w I puli, kolejne 50 w II, reszta do limitu w III.
+  // Każda pula drożej o 10 zł (ceny przy dystansach: `pools`). `current`: która pula jest teraz w sprzedaży
+  // (0 = I, 1 = II, 2 = III). Zmieniaj ręcznie, gdy operator zapisów zamknie pulę: karty, zapisy, JSON-LD
+  // i llms.txt przeliczą się same. Wielkość II puli (50) do potwierdzenia przez organizatora.
+  pools: { sizes: [50, 50], current: 0 },
 };
+
+/** Opis puli: numer rzymski i zakres miejsc, np. { name: 'I pula', seats: '1–50' }. */
+export function poolInfo(i: number) {
+  const sizes = event.pools.sizes;
+  const from = sizes.slice(0, i).reduce((a, b) => a + b, 1);
+  const name = `${['I', 'II', 'III', 'IV'][i]} pula`;
+  return { name, seats: i < sizes.length ? `${from}–${from + sizes[i] - 1}` : `od ${from}.`, from };
+}
 
 export type Distance = {
   id: string;
@@ -36,7 +49,10 @@ export type Distance = {
   difficulty: 1 | 2 | 3 | 4 | 5;
   description: string;
   facts: { label: string; value: string }[];
-  price: string;
+  /** Cena stała (sztafeta, Cross Junior). Biegi główne mają zamiast tego `pools`. */
+  price?: string;
+  /** Ceny w kolejnych pulach (zł), np. [50, 60, 70]. Która jest aktualna: `event.pools.current`. */
+  pools?: number[];
   limit: string;
   photo: string;
   alt: string;
@@ -47,18 +63,36 @@ export type Distance = {
 
 export const distances: Distance[] = [
   {
-    id: '10km',
+    id: '15km',
+    // Start razem z 10 km i wiek od 18 lat: założenia do potwierdzenia przez organizatora.
     startsAt: { day: 'saturday', time: '16:00' },
     name: 'Bieg Złoty',
-    distance: '10 km',
+    distance: '15 km',
     tier: 'gold',
+    difficulty: 5,
+    description: 'Trzy pętle po torze. Ściana Płaczu, rowy z wodą i błoto trzy razy. Dla tych, którzy chcą sprawdzić się do końca.',
+    facts: [
+      { label: 'Wiek', value: 'od 18 lat' },
+      { label: 'Start', value: 'sobota, 16:00' },
+    ],
+    pools: [70, 80, 90],
+    limit: '150 osób',
+    photo: '2022/2022-07.jpg',
+    alt: 'Zawodnik w biało-żółtej koszulce brnie na rękach przez błoto',
+  },
+  {
+    id: '10km',
+    startsAt: { day: 'saturday', time: '16:00' },
+    name: 'Bieg Srebrny',
+    distance: '10 km',
+    tier: 'silver',
     difficulty: 4,
     description: 'Dwie pętle po torze. Rowy z wodą, błoto i podbiegi pokonujesz dwa razy.',
     facts: [
       { label: 'Wiek', value: 'od 16 lat' },
       { label: 'Start', value: 'sobota, 16:00' },
     ],
-    price: '50 zł',
+    pools: [60, 70, 80],
     limit: '200 osób',
     photo: '2022/2022-01.jpg',
     alt: 'Zawodnik z numerem 12 biegnie po trawie wzdłuż żółtej taśmy trasy',
@@ -66,16 +100,16 @@ export const distances: Distance[] = [
   {
     id: '5km',
     startsAt: { day: 'saturday', time: '16:15' },
-    name: 'Bieg Srebrny',
+    name: 'Bieg Miedziowy',
     distance: '5 km',
-    tier: 'silver',
+    tier: 'copper',
     difficulty: 3,
     description: 'Jedna pętla z rowami, błotem i piaszczystymi podbiegami. Dobry wybór na pierwszy start.',
     facts: [
       { label: 'Wiek', value: 'od 14 lat' },
       { label: 'Start', value: 'sobota, ok. 16:15' },
     ],
-    price: '50 zł',
+    pools: [50, 60, 70],
     limit: '300 osób',
     photo: '2019/2019-03.jpg',
     alt: 'Uśmiechnięta zawodniczka pochyla się na podbiegu, za nią tłum biegaczy',
@@ -118,6 +152,13 @@ export const distances: Distance[] = [
   },
 ];
 
+/** Aktualna cena startu w zł (dla biegów z pulami: cena bieżącej puli). */
+export const priceNow = (d: Distance) => (d.pools ? d.pools[Math.min(event.pools.current, d.pools.length - 1)] : Number((d.price ?? '0').replace(/\D/g, '')));
+/** Wszystkie ceny dystansu (pule albo jedna cena). */
+export const pricesOf = (d: Distance) => d.pools ?? [priceNow(d)];
+/** Opis cen do tekstów (FAQ, llms.txt): „50 zł” albo „50 / 60 / 70 zł (I, II i III pula)”. */
+export const priceText = (d: Distance) => (d.pools ? `${d.pools.join(' / ')} zł (I, II i III pula)` : `${priceNow(d)} zł`);
+
 // Trasa: rozdziały momentu „photo-chapters”.
 export const chapters = [
   { title: 'Start na torze motocrossowym', body: 'Pętla prowadzi po torze motocrossowym w Górkowie: piach, trawa i naturalne przeszkody.', photo: '2022/2022-03.jpg', alt: 'Sznur biegaczy na piaszczystej ścieżce pod górę między krzakami' },
@@ -128,10 +169,10 @@ export const chapters = [
 
 export const schedule = {
   saturday: [
-    { time: '14:00', what: 'Biuro zawodów', sub: 'Pakiety na 5 km i 10 km, namiot przy torze' },
+    { time: '14:00', what: 'Biuro zawodów', sub: 'Pakiety na 5, 10 i 15 km, namiot przy torze' },
     { time: '15:40', what: 'Rozgrzewka', sub: 'Dla wszystkich uczestników' },
     { time: '15:50', what: 'Odprawa techniczna', sub: 'Strefa startowa, obowiązkowa' },
-    { time: '16:00', what: 'Start 10 km', key: true },
+    { time: '16:00', what: 'Start 15 km i 10 km', sub: 'Wspólny start: 15 km to trzy pętle, 10 km dwie', key: true },
     { time: '16:15', what: 'Start 5 km', key: true },
     { time: '18:30', what: 'Dekoracja na scenie' },
   ],
@@ -148,8 +189,15 @@ export const schedule = {
 
 export const faq = [
   { q: 'Czy dam radę, jeśli nigdy nie biegałem w terenie?', a: 'Tak. Wybierz 5 km: to jedna pętla, a przeszkody pokonasz także marszem.' },
+  {
+    q: 'Ile kosztuje start?',
+    a: `Na biegach głównych cena rośnie w trzech pulach: pierwsze ${event.pools.sizes[0]} miejsc w I puli, kolejne ${event.pools.sizes[1]} w II, pozostałe w III. ${distances
+      .filter((d) => d.pools)
+      .map((d) => `${d.distance}: ${d.pools!.join(', ')} zł`)
+      .join('; ')}. Sztafeta ${priceNow(distances.find((d) => d.id === 'sztafeta')!)} zł za całą drużynę, Cross Junior ${priceNow(distances.find((d) => d.id === 'junior')!)} zł.`,
+  },
   { q: 'W jakich butach biegać?', a: 'W butach z protektorem, najlepiej trailowych. Buty z kolcami lub korkami są zabronione i oznaczają dyskwalifikację.' },
-  { q: 'Gdzie i kiedy odebrać pakiet startowy?', a: 'W biurze zawodów, w namiocie przy torze: w sobotę od 14:00 na 5 i 10 km, w niedzielę od 9:00 dla sztafet i Cross Junior. Weź kod QR z zapisu i dokument tożsamości.' },
+  { q: 'Gdzie i kiedy odebrać pakiet startowy?', a: 'W biurze zawodów, w namiocie przy torze: w sobotę od 14:00 na 5, 10 i 15 km, w niedzielę od 9:00 dla sztafet i Cross Junior. Weź kod QR z zapisu i dokument tożsamości.' },
   { q: 'Co jest w pakiecie startowym?', a: 'Numer z chipem, posiłek po biegu, woda i izotonik na trasie, medal Finisher, opieka medyczna, szatnia z depozytem i ubezpieczenie.' },
   { q: 'Czy mogę pobiec razem z dzieckiem?', a: 'W Cross Junior tak: dzieci do 6 lat biegną 450 m z rodzicem, starsze mogą mieć opiekuna na trasie.' },
   { q: 'Czy można zmienić dystans albo odzyskać opłatę?', a: 'Nie. Regulamin nie przewiduje zmiany dystansu ani zwrotu opłaty startowej.' },

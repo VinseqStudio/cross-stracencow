@@ -5,11 +5,11 @@
 // Desktop: kroki z lewej, lista biegów z prawej. Telefon: zwarte kroki, przycisk, potem lista.
 // Na telefonie dochodzi pasek „Zapisz się” przyklejony do dołu ekranu.
 import { ArrowUpRight } from '@lucide/astro';
-import { distances, event } from '../data/event';
+import { distances, event, poolInfo, priceNow } from '../data/event';
 
 const reg = event.registration;
 const steps = [
-  { t: 'Wybierz bieg', b: '10 km, 5 km, sztafeta albo Cross Junior dla dzieci.' },
+  { t: 'Wybierz bieg', b: '15 km, 10 km, 5 km, sztafeta albo Cross Junior dla dzieci.' },
   { t: 'Zapisz się i opłać', b: 'Na stronie operatora zapisów. Formularz zajmuje kilka minut.' },
   { t: 'Odbierz pakiet', b: 'W biurze zawodów przy torze. Weź kod QR z zapisu i dokument.' },
 ];
@@ -48,7 +48,10 @@ const start = (d: (typeof distances)[number]) => d.facts.find((f) => f.label ===
               </span>
               <span class="hidden text-[15px] leading-5 sm:grid"><span class="text-muted">Start</span><span class="font-semibold">{start(d)}</span></span>
               <span class="hidden text-[15px] leading-5 sm:grid"><span class="text-muted">Limit</span><span class="font-semibold">{d.limit}</span></span>
-              <span class="text-right font-display text-[26px] leading-none whitespace-nowrap tabular-nums">{d.price}</span>
+              <span class="grid justify-items-end gap-1 text-right">
+                {d.pools && <span class="font-condensed text-[12px] leading-none font-bold tracking-[0.06em] text-accent uppercase">{poolInfo(event.pools.current).name}</span>}
+                <span class="font-display text-[26px] leading-none whitespace-nowrap tabular-nums">{priceNow(d)} zł</span>
+              </span>
               <span class="grid size-11 place-items-center rounded-sm bg-fg text-bg transition-colors group-hover:bg-red-strong group-hover:text-on-red">
                 <ArrowUpRight class="size-5" aria-hidden="true" stroke-linecap="square" />
               </span>
@@ -147,6 +150,7 @@ const start = (d: (typeof distances)[number]) => d.facts.find((f) => f.label ===
     const queue = () => { if (!frame) frame = requestAnimationFrame(sync); };
     addEventListener('scroll', queue, { passive: true });
     addEventListener('resize', queue);
-    sync();
+    // Pierwszy pomiar po policzeniu układu (callback IntersectionObserver), nie w trakcie wczytywania strony.
+    new IntersectionObserver(queue).observe(hero);
   }
 </script>
